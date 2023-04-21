@@ -1,6 +1,8 @@
 // EKSAMEN EMBEDDED SYSTEMS
-
+#define WIRE_PIN 8
+#define BUZZER_PIN 7
 /*
+        ENUM
 IDLE 
 -> Play idle music.
 -> check if startGame button is pressed.
@@ -16,19 +18,16 @@ GAME_OVER
 enum State {
   IDLE,
   GAME,
-  GAME_OVER,
-
-}
-#define WIRE_PIN 8
-#define BUZZER_PIN 7
+  GAME_OVER
+};
 
 
 // VARIABLES
-State currentState;
+enum State currentState;
 
 void setup() {
   // state should start as idle.
-  currentState = State.IDLE;
+  currentState = IDLE;
 
   Serial.begin(9600);
   // Use pullup to get less components on the board,
@@ -37,33 +36,43 @@ void setup() {
   pinMode(WIRE_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
+  currentState = GAME;
 }
 
 void loop() {
 
   switch(currentState){
-    case State.IDLE:
-      // run function idle.
+    case IDLE:
+      Idle();
       break;
-    case State.GAME:
-      // run Game function.
+    case GAME:
+      Game();
       break;
-    case State.GAME_OVER:
-      // Run game over function.
+    case GAME_OVER:
+      GameOver();
       break;
   }
-  int wireState = digitalRead(WIRE_PIN);
-  int buzzerState = !wireState;
-  digitalWrite(BUZZER_PIN, buzzerState);
-  /*
+  
+}
+
+void Idle(){
+
+}
+
+void Game(){
+  int wireState = digitalRead(WIRE_PIN); 
+  
   if (wireState == LOW) {
     digitalWrite(BUZZER_PIN, HIGH);
-    Serial.print("Inside: ");
-    Serial.println(wireState);
+    delay(1000);
+    currentState = GAME_OVER;
   }
   else {
     digitalWrite(BUZZER_PIN, LOW);
   }
-  */
-  Serial.println(wireState);
+  
+}
+void GameOver(){
+  digitalWrite(BUZZER_PIN, LOW);
+  Serial.println("GAME OVER!");
 }
