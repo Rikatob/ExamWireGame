@@ -21,6 +21,8 @@ SCK   -> 13 ( CLOCK SPEED)
 #define WIRE_PIN 2
 #define BUZZER_PIN 3
 #define GAME_BUTTON_PIN 4
+#define GOAL_PIN 5
+
 // TFT
 #define TFT_CS 10
 #define TFT_RST 9
@@ -48,7 +50,8 @@ GAME_OVER
 enum State {
   IDLE,
   GAME,
-  GAME_OVER
+  GAME_OVER,
+  GAME_COMPLETE
 };
 
 enum State currentState;
@@ -73,6 +76,7 @@ void setup() {
   pinMode(WIRE_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(GOAL_PIN, INPUT_PULLUP);
   digitalWrite(BUZZER_PIN, LOW);
   //</BASE>
   TftInitiate();
@@ -89,6 +93,9 @@ void loop() {
       break;
     case GAME_OVER:
       GameOver();
+      break;
+    case GAME_COMPLETE:
+      GameComplete();
       break;
   }
 }
@@ -119,11 +126,15 @@ void Game() {
     stateChanged = false;
   }
   int wireState = digitalRead(WIRE_PIN);
-
+  int goalPinState = digitalRead(GOAL_PIN);
   if (wireState == LOW) {
     digitalWrite(BUZZER_PIN, HIGH);
     delay(1000);
     currentState = GAME_OVER;
+    stateChanged = true;
+  }
+  if (goalPinState == LOW) {
+    currentState = GAME_COMPLETE;
     stateChanged = true;
   }
 }
@@ -133,7 +144,6 @@ void Game() {
 */
 void GameOver() {
   if (stateChanged) {
-    tft.fillScreen(ST77XX_BLACK);
     DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
     //Serial.println("GAME OVER!");
     digitalWrite(BUZZER_PIN, LOW);
@@ -147,6 +157,37 @@ void GameOver() {
   }
 }
 
+// REEEEEEEEEEEEEEEEEEEEEEEEEEWORK NEEEEEEEEEEEDED!!!!
+void GameComplete() {
+  if (stateChanged) {
+    DrawText("GAME WON!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
+    stateChanged = false;
+  }
+
+
+  delay(2000);
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(200);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(200);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(500);
+  digitalWrite(BUZZER_PIN, LOW);
+
+
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(200);
+  digitalWrite(BUZZER_PIN, LOW);
+
+
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(200);
+  digitalWrite(BUZZER_PIN, LOW);
+}
 
 int CheckButton(int buttonPin) {
   if (millis() - lastTimeButtonWasPressed > debounceDuration) {
