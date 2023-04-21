@@ -28,6 +28,10 @@ enum State currentState;
 // Set it to true so the first time idle runs the "setup" for idle state.
 bool stateChanged = true;
 
+// Used to handle the "bouncing" effect of button.
+unsigned long debounceDuration = 150;
+unsigned long lastTimeButtonWasPressed = 0;
+
 void setup() {
   // state should start as idle.
   currentState = IDLE;
@@ -64,13 +68,12 @@ void Idle() {
     stateChanged = false;
   }
 
-  int buttonState = digitalRead(GAME_BUTTON_PIN);
+  byte buttonPressed = CheckButton();
 
   // Game button pressed, then start game.
-  if (!buttonState) {
+  if (buttonPressed) {
     currentState = GAME;
     stateChanged = true;
-    delay(100);
   }
 }
 
@@ -105,10 +108,21 @@ void GameOver() {
     stateChanged = false;
   }
 
-  int buttonState = digitalRead(GAME_BUTTON_PIN);
-  if (!buttonState) {
+  byte buttonPressed = CheckButton();
+  if (buttonPressed) {
     currentState = IDLE;
     stateChanged = true;
-    delay(100);
   }
+}
+
+
+int CheckButton() {
+  if (millis() - lastTimeButtonWasPressed > debounceDuration) {
+    byte buttonState = digitalRead(GAME_BUTTON_PIN);
+    if (!buttonState) {
+      lastTimeButtonWasPressed = millis();
+      return true;
+    }
+  }
+  return false;
 }
