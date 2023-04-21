@@ -68,7 +68,7 @@ void Idle() {
     stateChanged = false;
   }
 
-  byte buttonPressed = CheckButton();
+  byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
 
   // Game button pressed, then start game.
   if (buttonPressed) {
@@ -108,7 +108,7 @@ void GameOver() {
     stateChanged = false;
   }
 
-  byte buttonPressed = CheckButton();
+  byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
   if (buttonPressed) {
     currentState = IDLE;
     stateChanged = true;
@@ -116,9 +116,9 @@ void GameOver() {
 }
 
 
-int CheckButton() {
+int CheckButton(int buttonPin) {
   if (millis() - lastTimeButtonWasPressed > debounceDuration) {
-    byte buttonState = digitalRead(GAME_BUTTON_PIN);
+    byte buttonState = digitalRead(buttonPin);
     if (!buttonState) {
       lastTimeButtonWasPressed = millis();
       return true;
