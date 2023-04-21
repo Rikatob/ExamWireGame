@@ -1,8 +1,9 @@
 // EKSAMEN EMBEDDED SYSTEMS
-#define WIRE_PIN 8
-#define BUZZER_PIN 7
+#define WIRE_PIN 2
+#define BUZZER_PIN 3
+#define GAME_BUTTON_PIN 4
 /*
-        ENUM
+        STATE MACHINE
 IDLE 
 -> Play idle music.
 -> check if startGame button is pressed.
@@ -24,6 +25,8 @@ enum State {
 
 // VARIABLES
 enum State currentState;
+// Set it to true so the first time idle runs the "setup" for idle state.
+bool stateChanged = true;
 
 void setup() {
   // state should start as idle.
@@ -35,13 +38,14 @@ void setup() {
   // if i want to have more control later on i can use pulldown and and add the chosen resistor.
   pinMode(WIRE_PIN, INPUT_PULLUP);
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
+
   digitalWrite(BUZZER_PIN, LOW);
-  currentState = GAME;
 }
 
 void loop() {
 
-  switch(currentState){
+  switch (currentState) {
     case IDLE:
       Idle();
       break;
@@ -52,27 +56,59 @@ void loop() {
       GameOver();
       break;
   }
-  
 }
 
-void Idle(){
+void Idle() {
+  if (stateChanged) {
+    Serial.println("GAME IN IDLE MODE");
+    stateChanged = false;
+  }
 
+  int buttonState = digitalRead(GAME_BUTTON_PIN);
+
+  // Game button pressed, then start game.
+  if (!buttonState) {
+    currentState = GAME;
+    stateChanged = true;
+    delay(100);
+  }
 }
 
-void Game(){
-  int wireState = digitalRead(WIRE_PIN); 
-  
+/*
+  Game is running.
+  -> If wire is touched buzz sound will come and state will change to game over.
+*/
+void Game() {
+  if (stateChanged) {
+    Serial.println("GAME STARTED!");
+    stateChanged = false;
+  }
+  int wireState = digitalRead(WIRE_PIN);
+
   if (wireState == LOW) {
     digitalWrite(BUZZER_PIN, HIGH);
     delay(1000);
     currentState = GAME_OVER;
+    stateChanged = true;
+  } else {
+    //digitalWrite(BUZZER_PIN, LOW);
   }
-  else {
-    digitalWrite(BUZZER_PIN, LOW);
-  }
-  
 }
-void GameOver(){
-  digitalWrite(BUZZER_PIN, LOW);
-  Serial.println("GAME OVER!");
+
+/*
+
+*/
+void GameOver() {
+  if (stateChanged) {
+    Serial.println("GAME OVER!");
+    digitalWrite(BUZZER_PIN, LOW);
+    stateChanged = false;
+  }
+
+  int buttonState = digitalRead(GAME_BUTTON_PIN);
+  if (!buttonState) {
+    currentState = IDLE;
+    stateChanged = true;
+    delay(100);
+  }
 }
