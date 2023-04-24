@@ -27,13 +27,16 @@ void setup() {
     // State should start as idle.
     currentState = IDLE;
     Serial.begin(9600);
+    currentTime = millis();
     //<BASE>
     // Use pullup to get less components on the board,
     // estimated 20 - 50 K resistor in arduino,
     // if i want to have more control later on i can use pulldown and and add the chosen resistor.
     pinMode(WIRE_PIN, INPUT_PULLUP);
     pinMode(BUZZER_PIN, OUTPUT);
-    pinMode(GAME_BUTTON_PIN, INPUT_PULLUP);
+    pinMode(BTN_OK_PIN, INPUT_PULLUP);
+    pinMode(BTN_UP_PIN, INPUT_PULLUP);
+    pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
     pinMode(GOAL_PIN, INPUT_PULLUP);
     digitalWrite(BUZZER_PIN, LOW);
     //</BASE>
@@ -44,7 +47,7 @@ void setup() {
         Serial.println("SD FAILED TO INIT..");
         return;
     }
-    tmrpcm.setVolume(3);
+    tmrpcm.setVolume(5);
     tmrpcm.quality(true);
 }
 
@@ -69,7 +72,11 @@ void loop() {
 }
 
 void Idle() {
+
+    static int currentPos;
+
     if (stateChanged) {
+        currentPos = 11;
         StartMenu();
         stateChanged = false;
     }
@@ -78,12 +85,29 @@ void Idle() {
         //tmrpcm.play("test.wav");              // TODO NEED TO CHANGE THIS SOUND
     }
 
-    byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
-    // Game button pressed, then start game.
-    if (buttonPressed) {
-        tmrpcm.stopPlayback();
-        currentState = GAME;
-        stateChanged = true;
+    byte okBtnPressed = CheckButton(BTN_OK_PIN);
+    byte upBtnPressed = CheckButton(BTN_UP_PIN);
+    byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
+    // Ok button pressed -> Do what user have chosen.
+    if (okBtnPressed) {
+
+        // Start game.
+        if (currentPos == 11) {
+            tmrpcm.stopPlayback();
+            currentState = GAME;
+            stateChanged = true;
+
+            // Print high-score.
+        } else if (currentPos == 41) {
+            DrawText("HIGHSCORE TABLE WILL BE HERE!", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 5, 0, true);
+        }
+
+    }
+    if (upBtnPressed) {
+        MoveUpInMenu(&currentPos);
+    }
+    if (downBtnPressed) {
+        MoveDownInMenu(&currentPos);
     }
 }
 
@@ -120,14 +144,13 @@ void Game() {
 void GameOver() {
     if (stateChanged) {
         DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
+        if (!tmrpcm.isPlaying()) {
+            tmrpcm.play("over.wav");
+        }
         stateChanged = false;
     }
 
-    if (!tmrpcm.isPlaying()) {
-        tmrpcm.play("over.wav");
-    }
-
-    byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
+    byte buttonPressed = CheckButton(BTN_OK_PIN);
     if (buttonPressed) {
         tmrpcm.stopPlayback();
         currentState = IDLE;
@@ -137,13 +160,16 @@ void GameOver() {
 
 // REEEEEEEEEEEEEEEEEEEEEEEEEEWORK NEEEEEEEEEEEDED!!!!
 void GameComplete() {
+
     if (stateChanged) {
         DrawText("GAME WON!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
+        if (!tmrpcm.isPlaying()) {
+            tmrpcm.play("complete.wav");
+        }
         stateChanged = false;
     }
-    if (!tmrpcm.isPlaying()) {
-        tmrpcm.play("complete.wav");
-    }
+
+
 }
 
 byte CheckButton(byte buttonPin) {
@@ -187,6 +213,22 @@ void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool 
 
 void StartMenu() {
     DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
-    DrawText("->",ST77XX_BLUE,DEFAULT_TEXT_SIZE,0,10,false);
+    DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
     DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
+}
+
+void MoveUpInMenu(int *currentPos) {
+    // If currentPos is 10, then it cant go up.
+    if (*currentPos != 11) {
+        DrawText("->", ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+        *currentPos -= 30;
+        DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    }
+}
+
+void MoveDownInMenu(int *currentPos) {
+
+    DrawText("->", ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    *currentPos += 30;
+    DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
 }

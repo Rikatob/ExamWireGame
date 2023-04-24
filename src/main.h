@@ -15,9 +15,11 @@
 //////////////////////////////////////////////////////Defines//////////////////////////////////////////////////////
 #define WIRE_PIN 2
 #define BUZZER_PIN 9
-#define GAME_BUTTON_PIN 4
-#define GOAL_PIN 5
+#define BTN_OK_PIN 4
+#define BTN_UP_PIN A1
+#define BTN_DOWN_PIN A0
 
+#define GOAL_PIN 5
 // TFT
 #define SD_CS 7
 #define TFT_CS 10
@@ -57,6 +59,7 @@ bool stateChanged = true;
 // Used to handle the "bouncing" effect of button.
 byte debounceDuration = 150;
 unsigned long lastTimeButtonWasPressed = 0;
+unsigned long currentTime = 0;
 
 
 //////////////////////////////////////////////////Function prototypes//////////////////////////////////////////////////
@@ -69,4 +72,6 @@ byte CheckButton(byte buttonPin);
 void TftInitiate();
 void DrawText(const char* text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
 void StartMenu();
+void MoveUpInMenu(int *currentPos);
+void MoveDownInMenu(int *currentPos);
 #endif //EXAMEMBEDDED_MAIN_H
