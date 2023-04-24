@@ -20,59 +20,13 @@ SCK   -> 13 ( CLOCK SPEED)
 #include <SPI.h>
 #include <SD.h>
 #include <TMRpcm.h>
-//////////////////////////////////////////////////////Defines//////////////////////////////////////////////////////
-#define WIRE_PIN 2
-#define BUZZER_PIN 9
-#define GAME_BUTTON_PIN 4
-#define GOAL_PIN 5
-
-// TFT
-#define SD_CS 7
-#define TFT_CS 10
-#define TFT_RST 3
-#define TFT_DC 8
-#define DEFAULT_TEXT_SIZE 3
-
-///////////////////////////////////////////////////Objects/Inits///////////////////////////////////////////////////
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
-TMRpcm tmrpcm;
-/////////////////////////////////////////////////////Variables/////////////////////////////////////////////////////
-/*
-        STATE MACHINE
-IDLE
--> Play idle music.
--> check if startGame button is pressed.
-
-GAME
--> Start timer.
--> Check wire.
-
-GAME_OVER
--> Show score.
--> play game over music.
-*/
-enum State {
-    IDLE,
-    GAME,
-    GAME_OVER,
-    GAME_COMPLETE
-};
-
-enum State currentState;
-// Set it to true so the first time idle runs the "setup" for idle state.
-bool stateChanged = true;
-
-// Used to handle the "bouncing" effect of button.
-byte debounceDuration = 150;
-unsigned long lastTimeButtonWasPressed = 0;
-
+#include "main.h"
 
 
 void setup() {
     // State should start as idle.
     currentState = IDLE;
     Serial.begin(9600);
-
     //<BASE>
     // Use pullup to get less components on the board,
     // estimated 20 - 50 K resistor in arduino,
@@ -86,11 +40,12 @@ void setup() {
     TftInitiate();
     //PMC
     tmrpcm.speakerPin = BUZZER_PIN;
-    if(!SD.begin(SD_CS)){
+    if (!SD.begin(SD_CS)) {
         Serial.println("SD FAILED TO INIT..");
         return;
     }
-    tmrpcm.volume(1);
+    tmrpcm.setVolume(3);
+    tmrpcm.quality(true);
 }
 
 void loop() {
@@ -109,22 +64,24 @@ void loop() {
             GameComplete();
             break;
     }
+
+
 }
 
 void Idle() {
     if (stateChanged) {
-        DrawText("GAME IN IDLE MODE!", ST77XX_RED, DEFAULT_TEXT_SIZE, 15, 40, true);
-        //Serial.println("GAME IN IDLE MODE");
+        StartMenu();
         stateChanged = false;
     }
-/*
-  if(!tmrpcm.isPlaying()){
-    tmrpcm.play("idle.wav");
-  }
-*/
+
+    if (!tmrpcm.isPlaying()) {
+        //tmrpcm.play("test.wav");              // TODO NEED TO CHANGE THIS SOUND
+    }
+
     byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
     // Game button pressed, then start game.
     if (buttonPressed) {
+        tmrpcm.stopPlayback();
         currentState = GAME;
         stateChanged = true;
     }
@@ -137,20 +94,21 @@ void Idle() {
 void Game() {
     if (stateChanged) {
         DrawText("GAME STARTED!", ST77XX_RED, DEFAULT_TEXT_SIZE, 5, 55, true);
-        if(!tmrpcm.isPlaying()){
+        if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
+
         stateChanged = false;
     }
     byte wireState = digitalRead(WIRE_PIN);
     byte goalPinState = digitalRead(GOAL_PIN);
     if (wireState == LOW) {
-        digitalWrite(BUZZER_PIN, HIGH);
-        delay(1000);
+        tmrpcm.stopPlayback();
         currentState = GAME_OVER;
         stateChanged = true;
     }
     if (goalPinState == LOW) {
+        tmrpcm.stopPlayback();
         currentState = GAME_COMPLETE;
         stateChanged = true;
     }
@@ -162,17 +120,16 @@ void Game() {
 void GameOver() {
     if (stateChanged) {
         DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
-        //Serial.println("GAME OVER!");
-        digitalWrite(BUZZER_PIN, LOW);
         stateChanged = false;
     }
 
-    if(!tmrpcm.isPlaying()){
+    if (!tmrpcm.isPlaying()) {
         tmrpcm.play("over.wav");
     }
 
     byte buttonPressed = CheckButton(GAME_BUTTON_PIN);
     if (buttonPressed) {
+        tmrpcm.stopPlayback();
         currentState = IDLE;
         stateChanged = true;
     }
@@ -184,7 +141,7 @@ void GameComplete() {
         DrawText("GAME WON!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
         stateChanged = false;
     }
-    if(!tmrpcm.isPlaying()){
+    if (!tmrpcm.isPlaying()) {
         tmrpcm.play("complete.wav");
     }
 }
@@ -216,7 +173,7 @@ void TftInitiate() {
 
 // Print text to the screen in a certain color('RGB565 16bit' "ST77XX_<color>" pre-defined from lib), size, position(x=COLUMN, y=ROW) and clearing screen.
 // 240x135 x and y goes up in a unsigned 8 bit int (byte macro)
-void DrawText(char* text, uint16_t color, byte size, byte x, byte y, bool clearScreen) {
+void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen) {
     if (clearScreen) {
         tft.fillScreen(ST77XX_BLACK);
     }
@@ -229,6 +186,7 @@ void DrawText(char* text, uint16_t color, byte size, byte x, byte y, bool clearS
 
 
 void StartMenu() {
-    DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 5, 10, true);
-    DrawText("High-score table.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 5, 20, true);
+    DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
+    DrawText("->",ST77XX_BLUE,DEFAULT_TEXT_SIZE,0,10,false);
+    DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
 }
