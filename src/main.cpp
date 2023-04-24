@@ -8,27 +8,45 @@ CS    -> 7 (CHIP SELECT SD)
 MOSI  -> 11 ( MASTER OUT SLAVE IN)
 MISO  -> 12 ( MASTER IN SLAVE OUT)
 SCK   -> 13 ( CLOCK SPEED)
+
+
+<<<<<<<<I2C>>>>>>>>>
+SDA -> A4 (DATA LINE)
+SCL -> A5 (CLOCK LINE)
 */
 
 /////////////////////////////////////////////////////Libraries/////////////////////////////////////////////////////
+#include "main.h"
+#include <Arduino.h>
 /*
 <<<<<<<<<<<<<<<<<<<< ST7789 >>>>>>>>>>>>>>>>>>>>
 */
-#include <Arduino.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <SPI.h>
+/*
+<<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
+*/
 #include <SD.h>
 #include <TMRpcm.h>
-#include "main.h"
+/*
+<<<<<<<<<<<<<<<<<<<< DS3231 >>>>>>>>>>>>>>>>>>>>
+*/
+#include <Wire.h>
+#include <RtcDS3231.h>
 
+///////////////////////////////////////////////////Objects/Inits///////////////////////////////////////////////////
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+TMRpcm tmrpcm;
+RtcDS3231<TwoWire> Rtc(Wire);
+RtcDateTime startTime;
+RtcDateTime currentTime;
 
 void setup() {
+    Serial.begin(9600);
     // State should start as idle.
     currentState = IDLE;
-    Serial.begin(9600);
-    currentTime = millis();
-    //<BASE>
+
     // Use pullup to get less components on the board,
     // estimated 20 - 50 K resistor in arduino,
     // if i want to have more control later on i can use pulldown and and add the chosen resistor.
@@ -39,16 +57,13 @@ void setup() {
     pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
     pinMode(GOAL_PIN, INPUT_PULLUP);
     digitalWrite(BUZZER_PIN, LOW);
-    //</BASE>
+
+    // TFT
     TftInitiate();
-    //PMC
-    tmrpcm.speakerPin = BUZZER_PIN;
-    if (!SD.begin(SD_CS)) {
-        Serial.println("SD FAILED TO INIT..");
-        return;
-    }
-    tmrpcm.setVolume(5);
-    tmrpcm.quality(true);
+    //PCM
+    PcmInitiate();
+    // Initiate REAL TIME CLOCK (DS3231).
+    Rtc.Begin();
 }
 
 void loop() {
@@ -121,9 +136,24 @@ void Game() {
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
-
+        //startTime = Rtc.GetDateTime();
         stateChanged = false;
     }
+    //TODO THIS NEEDS FIXING ???
+  /*
+    currentTime = Rtc.GetDateTime();
+    int timeLeft =  currentTime.Second() -startTime.Second();
+    char buffer[10];
+    snprintf(buffer,10,"%d",timeLeft);
+    buffer[9] = '\0';
+    Serial.println(timeLeft);
+
+    if(timeLeft>0){
+        DrawText(buffer,ST77XX_BLUE,DEFAULT_TEXT_SIZE,0,0,false);
+
+    }
+*/
+
     byte wireState = digitalRead(WIRE_PIN);
     byte goalPinState = digitalRead(GOAL_PIN);
     if (wireState == LOW) {
@@ -197,6 +227,19 @@ void TftInitiate() {
     tft.setRotation(1);
 }
 
+
+void PcmInitiate(){
+    tmrpcm.speakerPin = BUZZER_PIN;
+    if (!SD.begin(SD_CS)) {
+        Serial.println("SD FAILED TO INIT..");
+        return;
+    }
+    tmrpcm.setVolume(5);
+    tmrpcm.quality(true);
+}
+
+
+
 // Print text to the screen in a certain color('RGB565 16bit' "ST77XX_<color>" pre-defined from lib), size, position(x=COLUMN, y=ROW) and clearing screen.
 // 240x135 x and y goes up in a unsigned 8 bit int (byte macro)
 void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen) {
@@ -209,7 +252,24 @@ void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool 
     tft.setTextWrap(true);
     tft.print(text);
 }
+// TODO USE THIS PRINT DATE TIME ????????????????
 
+// print out the time and date from DS3231 to a certain place in the TFT.
+void printDateTime(const RtcDateTime& dt, uint8_t cursorX, uint8_t cursorY) {
+    char datestring[20];
+
+    snprintf_P(datestring,
+               countof(datestring),
+               PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
+               dt.Month(),
+               dt.Day(),
+               dt.Year(),
+               dt.Hour(),
+               dt.Minute(),
+               dt.Second());
+    tft.setTextSize(2);
+    DrawText(datestring, ST77XX_BLUE,DEFAULT_TEXT_SIZE, cursorX, cursorY,false);
+}
 
 void StartMenu() {
     DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
