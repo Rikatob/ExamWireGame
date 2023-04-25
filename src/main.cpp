@@ -64,6 +64,8 @@ void setup() {
     PcmInitiate();
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
+   // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
+
 }
 
 void loop() {
@@ -136,23 +138,33 @@ void Game() {
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
-        //startTime = Rtc.GetDateTime();
+        previousTime = GAME_DURATION; // Initial set it to duration of game.
+        startTime = Rtc.GetDateTime();
         stateChanged = false;
     }
-    //TODO THIS NEEDS FIXING ???
-  /*
-    currentTime = Rtc.GetDateTime();
-    int timeLeft =  currentTime.Second() -startTime.Second();
-    char buffer[10];
-    snprintf(buffer,10,"%d",timeLeft);
-    buffer[9] = '\0';
-    Serial.println(timeLeft);
+    if (!tmrpcm.isPlaying()) {
+        currentTime = Rtc.GetDateTime();
+        unsigned long timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
+        unsigned long timeLeft = 20 - timeGoneBy;
+        char buffer[20];
+        snprintf(buffer, countof(buffer), "%02lu", previousTime);
 
-    if(timeLeft>0){
-        DrawText(buffer,ST77XX_BLUE,DEFAULT_TEXT_SIZE,0,0,false);
+        if (timeLeft == 0) {
+            tmrpcm.stopPlayback();
+            currentState = GAME_OVER;
+            stateChanged = true;
+        } else if (previousTime > timeLeft) {
+            tmrpcm.stopPlayback();
+            DrawText(buffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, 0, false);
+            snprintf(buffer, countof(buffer), "%02lu", timeLeft);
+            DrawText(buffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 0, false);
+            previousTime = timeLeft;
 
+        } else {
+            //DrawText(buffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, 0, false);
+            //DrawText(buffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 0, false);
+        }
     }
-*/
 
     byte wireState = digitalRead(WIRE_PIN);
     byte goalPinState = digitalRead(GOAL_PIN);
@@ -228,7 +240,7 @@ void TftInitiate() {
 }
 
 
-void PcmInitiate(){
+void PcmInitiate() {
     tmrpcm.speakerPin = BUZZER_PIN;
     if (!SD.begin(SD_CS)) {
         Serial.println("SD FAILED TO INIT..");
@@ -238,7 +250,19 @@ void PcmInitiate(){
     tmrpcm.quality(true);
 }
 
+void CalibrateRtc() {
+    RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
+    RtcDateTime now = Rtc.GetDateTime();
+    if (now < compiled) {
+        Serial.println("RTC is older than compile time, updating DateTime");
+        Rtc.SetDateTime(compiled);
+    } else if (now > compiled) {
+        Serial.println("RTC is newer than compile time, this is expected");
+    } else if (now == compiled) {
+        Serial.println("RTC is the same as compile time, while not expected all is still fine");
+    }
 
+}
 
 // Print text to the screen in a certain color('RGB565 16bit' "ST77XX_<color>" pre-defined from lib), size, position(x=COLUMN, y=ROW) and clearing screen.
 // 240x135 x and y goes up in a unsigned 8 bit int (byte macro)
@@ -255,7 +279,7 @@ void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool 
 // TODO USE THIS PRINT DATE TIME ????????????????
 
 // print out the time and date from DS3231 to a certain place in the TFT.
-void printDateTime(const RtcDateTime& dt, uint8_t cursorX, uint8_t cursorY) {
+void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
     char datestring[20];
 
     snprintf_P(datestring,
@@ -267,9 +291,10 @@ void printDateTime(const RtcDateTime& dt, uint8_t cursorX, uint8_t cursorY) {
                dt.Hour(),
                dt.Minute(),
                dt.Second());
-    tft.setTextSize(2);
-    DrawText(datestring, ST77XX_BLUE,DEFAULT_TEXT_SIZE, cursorX, cursorY,false);
+    //tft.setTextSize(2);
+    DrawText(datestring, ST77XX_BLUE, DEFAULT_TEXT_SIZE, cursorX, cursorY, false);
 }
+
 
 void StartMenu() {
     DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);

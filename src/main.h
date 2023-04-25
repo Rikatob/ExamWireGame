@@ -28,6 +28,7 @@
 #define TFT_RST 3
 #define TFT_DC 8
 #define DEFAULT_TEXT_SIZE 3
+#define GAME_DURATION 20
 /*Macro for length of array in printDateTime*/
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
@@ -57,6 +58,7 @@ enum State currentState;
 bool stateChanged = true; // Set it to true so the first time idle runs the "setup" for idle state.
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
 unsigned long lastTimeButtonWasPressed = 0;
+unsigned long previousTime = 0;
 //unsigned long currentTime = 0;
 int gameDuration = 20;
 
@@ -69,6 +71,7 @@ void GameComplete();
 byte CheckButton(byte buttonPin);
 void TftInitiate();
 void PcmInitiate();
+void CalibrateRtc();
 void DrawText(const char* text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
 void printDateTime(const RtcDateTime& dt, uint8_t cursorX, uint8_t cursorY);
 void StartMenu();
