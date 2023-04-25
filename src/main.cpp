@@ -64,7 +64,7 @@ void setup() {
     PcmInitiate();
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
-   // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
+    // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
 
 }
 
@@ -133,21 +133,23 @@ void Idle() {
   -> If wire is touched buzz sound will come and state will change to game over.
 */
 void Game() {
+
     if (stateChanged) {
-        DrawText("GAME STARTED!", ST77XX_RED, DEFAULT_TEXT_SIZE, 5, 55, true);
+        DrawText("GO GO GO!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 55, true);
+        DrawText("No time to loose!", ST77XX_BLUE, 2, 25, 85, false);
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
+        textColor = ST77XX_BLUE;
         previousTime = GAME_DURATION; // Initial set it to duration of game.
         startTime = Rtc.GetDateTime();
         stateChanged = false;
     }
     if (!tmrpcm.isPlaying()) {
         currentTime = Rtc.GetDateTime();
-        unsigned long timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
-        unsigned long timeLeft = 20 - timeGoneBy;
-        char buffer[20];
-        snprintf(buffer, countof(buffer), "%02lu", previousTime);
+        timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
+        timeLeft = GAME_DURATION - timeGoneBy;
+        snprintf(gameBuffer, countof(gameBuffer), "%02lu", previousTime);
 
         if (timeLeft == 0) {
             tmrpcm.stopPlayback();
@@ -155,14 +157,16 @@ void Game() {
             stateChanged = true;
         } else if (previousTime > timeLeft) {
             tmrpcm.stopPlayback();
-            DrawText(buffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, 0, false);
-            snprintf(buffer, countof(buffer), "%02lu", timeLeft);
-            DrawText(buffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 0, false);
+            // Change color on time when the time left decreases.
+            if (timeLeft <= 6) {
+                textColor = ST77XX_RED;
+            } else if (timeLeft <= 12) {
+                textColor = ST77XX_YELLOW;
+            }
+            DrawText(gameBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 100, 15, false);
+            snprintf(gameBuffer, countof(gameBuffer), "%02lu", timeLeft);
+            DrawText(gameBuffer, textColor, DEFAULT_TEXT_SIZE, 100, 15, false);
             previousTime = timeLeft;
-
-        } else {
-            //DrawText(buffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, 0, false);
-            //DrawText(buffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 0, false);
         }
     }
 
@@ -200,17 +204,26 @@ void GameOver() {
     }
 }
 
-// REEEEEEEEEEEEEEEEEEEEEEEEEEWORK NEEEEEEEEEEEDED!!!!
+
 void GameComplete() {
 
     if (stateChanged) {
-        DrawText("GAME WON!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
+        DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
+        snprintf(gameBuffer, countof(gameBuffer), "Your time:%02lu.sec", GAME_DURATION - timeLeft);
+        DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
+        DrawText("Press OK to try again.", ST77XX_BLUE, 1, 45, 100, false);
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("complete.wav");
         }
         stateChanged = false;
     }
 
+    byte buttonPressed = CheckButton(BTN_OK_PIN);
+    if (buttonPressed) {
+        tmrpcm.stopPlayback();
+        currentState = IDLE;
+        stateChanged = true;
+    }
 
 }
 
@@ -301,6 +314,7 @@ void StartMenu() {
     DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
     DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
 }
+
 
 void MoveUpInMenu(int *currentPos) {
     // If currentPos is 10, then it cant go up.

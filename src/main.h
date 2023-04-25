@@ -28,7 +28,7 @@
 #define TFT_RST 3
 #define TFT_DC 8
 #define DEFAULT_TEXT_SIZE 3
-#define GAME_DURATION 20
+#define GAME_DURATION 30
 /*Macro for length of array in printDateTime*/
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
@@ -59,6 +59,10 @@ bool stateChanged = true; // Set it to true so the first time idle runs the "set
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
 unsigned long lastTimeButtonWasPressed = 0;
 unsigned long previousTime = 0;
+unsigned long timeGoneBy = 0;
+unsigned long timeLeft = 0;
+uint16_t textColor = 0;
+char gameBuffer[20] = "";
 //unsigned long currentTime = 0;
 int gameDuration = 20;
 
