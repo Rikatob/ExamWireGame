@@ -44,8 +44,6 @@ RtcDateTime currentTime;
 
 void setup() {
     Serial.begin(9600);
-    // State should start as idle.
-    currentState = IDLE;
 
     // Use pullup to get less components on the board,
     // estimated 20 - 50 K resistor in arduino,
@@ -83,18 +81,22 @@ void loop() {
         case GAME_COMPLETE:
             GameComplete();
             break;
+        case GAME_DIFFICULTY:
+            GameDifficulty();
+            break;
     }
 
 
 }
 
+// TODO StopPlayback in stateChanged if statment in every function
 void Idle() {
 
     static int currentPos;
 
     if (stateChanged) {
         currentPos = 11;
-        StartMenu();
+        PrintStartMenu();
         stateChanged = false;
     }
 
@@ -114,11 +116,59 @@ void Idle() {
             currentState = GAME;
             stateChanged = true;
 
-            // Print high-score.
+            // Change difficulty
         } else if (currentPos == 41) {
+            tmrpcm.stopPlayback();
+            currentState = GAME_DIFFICULTY;
+            stateChanged = true;
+
+            // Print high-score.
+        } else if (currentPos == 71) {
             DrawText("HIGHSCORE TABLE WILL BE HERE!", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 5, 0, true);
         }
 
+    }
+    if (upBtnPressed) {
+        MoveUpInMenu(&currentPos);
+    }
+    if (downBtnPressed) {
+        MoveDownInMenu(&currentPos);
+    }
+}
+
+void GameDifficulty() {
+    static int currentPos;
+    if (stateChanged) {
+        currentPos = 11;
+        PrintDifficultyMenu();
+        stateChanged = false;
+    }
+
+
+    byte okBtnPressed = CheckButton(BTN_OK_PIN);
+    byte upBtnPressed = CheckButton(BTN_UP_PIN);
+    byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
+    // Ok button pressed -> Do what user have chosen.
+    if (okBtnPressed) {
+
+        // User chose Easy.
+        if (currentPos == 11) {
+            difficulty = EASY;
+            currentState = IDLE;
+            stateChanged = true;
+
+            // User chose Medium.
+        } else if (currentPos == 41) {
+            difficulty = MEDIUM;
+            currentState = IDLE;
+            stateChanged = true;
+
+            // User chose Hard.
+        } else if (currentPos == 71) {
+            difficulty = HARD;
+            currentState = IDLE;
+            stateChanged = true;
+        }
     }
     if (upBtnPressed) {
         MoveUpInMenu(&currentPos);
@@ -140,6 +190,7 @@ void Game() {
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
+        playerLives = difficulty;
         textColor = ST77XX_BLUE;
         previousTime = GAME_DURATION; // Initial set it to duration of game.
         startTime = Rtc.GetDateTime();
@@ -158,9 +209,9 @@ void Game() {
         } else if (previousTime > timeLeft) {
             tmrpcm.stopPlayback();
             // Change color on time when the time left decreases.
-            if (timeLeft <= 6) {
+            if (timeLeft <= 10) {
                 textColor = ST77XX_RED;
-            } else if (timeLeft <= 12) {
+            } else if (timeLeft <= 20) {
                 textColor = ST77XX_YELLOW;
             }
             DrawText(gameBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 100, 15, false);
@@ -173,9 +224,17 @@ void Game() {
     byte wireState = digitalRead(WIRE_PIN);
     byte goalPinState = digitalRead(GOAL_PIN);
     if (wireState == LOW) {
-        tmrpcm.stopPlayback();
-        currentState = GAME_OVER;
-        stateChanged = true;
+        playerLives--;
+        if (playerLives == 0) {
+            tmrpcm.stopPlayback();
+            currentState = GAME_OVER;
+            stateChanged = true;
+        } else{
+            tmrpcm.play("over.wav");
+            delay(200);
+            tmrpcm.stopPlayback();
+        }
+
     }
     if (goalPinState == LOW) {
         tmrpcm.stopPlayback();
@@ -309,10 +368,18 @@ void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
 }
 
 
-void StartMenu() {
+void PrintStartMenu() {
     DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
     DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
-    DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
+    DrawText("Difficulty.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
+    DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 70, false);
+}
+
+void PrintDifficultyMenu() {
+    DrawText("Easy.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
+    DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
+    DrawText("Medium.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
+    DrawText("Hard.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 70, false);
 }
 
 

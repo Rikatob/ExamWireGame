@@ -51,12 +51,21 @@ enum State {
     IDLE,
     GAME,
     GAME_OVER,
-    GAME_COMPLETE
+    GAME_COMPLETE,
+    GAME_DIFFICULTY
 };
 
-enum State currentState;
+enum Difficulty {
+    EASY = 3,
+    MEDIUM = 2,
+    HARD = 1
+};
+
+enum State currentState = IDLE; // Default state as idle.
+enum Difficulty difficulty = EASY; // default difficulty easy.
 bool stateChanged = true; // Set it to true so the first time idle runs the "setup" for idle state.
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
+byte playerLives = 0;
 unsigned long lastTimeButtonWasPressed = 0;
 unsigned long previousTime = 0;
 unsigned long timeGoneBy = 0;
@@ -69,16 +78,33 @@ int gameDuration = 20;
 //////////////////////////////////////////////////Function prototypes//////////////////////////////////////////////////
 
 void Idle();
+
 void Game();
+
 void GameOver();
+
 void GameComplete();
+
 byte CheckButton(byte buttonPin);
+
 void TftInitiate();
+
 void PcmInitiate();
+
 void CalibrateRtc();
-void DrawText(const char* text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
-void printDateTime(const RtcDateTime& dt, uint8_t cursorX, uint8_t cursorY);
-void StartMenu();
+
+void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
+
+void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY);
+
+void PrintStartMenu();
+
+void PrintDifficultyMenu();
+
+void GameDifficulty();
+
 void MoveUpInMenu(int *currentPos);
+
 void MoveDownInMenu(int *currentPos);
+
 #endif //EXAMEMBEDDED_MAIN_H
