@@ -29,6 +29,7 @@
 #define TFT_DC 8
 #define DEFAULT_TEXT_SIZE 3
 #define GAME_DURATION 30
+#define HIGH_SCORE_TABLE_SIZE 3
 /*Macro for length of array in printDateTime*/
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
@@ -62,18 +63,24 @@ enum Difficulty {
     HARD = 1
 };
 
+typedef struct _HighScoreEntry{
+    char initials[4]; // "AAA" + zero terminator.
+    byte time;
+} HighScoreEntry;
+
 enum State currentState = IDLE; // Default state as idle.
 enum Difficulty difficulty = EASY; // default difficulty easy.
 bool stateChanged = true; // Set it to true so the first time idle runs the "setup" for idle state.
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
 byte playerLives = 0;
+byte highScoreEntriesCount = 0;
 unsigned long lastTimeButtonWasPressed = 0;
 unsigned long previousTime = 0;
-unsigned long timeGoneBy = 0;
-unsigned long timeLeft = 0;
+byte timeGoneBy = 0;
+byte timeLeft = 0;
 uint16_t textColor = 0;
 char gameBuffer[20] = {0};
-
+HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
 //unsigned long currentTime = 0;
 int gameDuration = 20;
 
@@ -106,6 +113,14 @@ void PrintDifficultyMenu();
 void GameDifficulty();
 
 void EnterInitials();
+
+void UpdateHighScore(char * initials, byte time);
+
+void AddHighScoreEntry(int index, char * initials, byte time);
+
+void MakeSpaceForHighScoreEntry(int indexToReplace);
+
+void PrintHighScoreTable();
 
 void MoveUpInMenu(int *currentPos);
 

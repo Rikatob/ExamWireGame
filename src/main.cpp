@@ -1,6 +1,10 @@
 
 // EKSAMEN EMBEDDED SYSTEMS
-
+//////////////////////////////////////////////////////////////////////////////
+// TODO Change some statics (or all) to global variables.                   //
+// TODO Use highscore temp to illustrate adding highscores to rtc memory.   //
+// TODO
+//////////////////////////////////////////////////////////////////////////////
 /*
 <<<<<<<<SPI>>>>>>>>>
 CS    -> 10 ( CHIP SELECT TFT)
@@ -127,7 +131,7 @@ void Idle() {
 
             // Print high-score.
         } else if (currentPos == 71) {
-            DrawText("HIGHSCORE TABLE WILL BE HERE!", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 5, 0, true);
+            PrintHighScoreTable();
         }
 
     }
@@ -218,7 +222,7 @@ void Game() {
                 textColor = ST77XX_YELLOW;
             }
             DrawText(gameBuffer, ST77XX_BLACK, 6, 80, 15, false);
-            snprintf(gameBuffer, countof(gameBuffer), "%02lu", timeLeft);
+            snprintf(gameBuffer, countof(gameBuffer), "%02d", timeLeft);
             DrawText(gameBuffer, textColor, 6, 80, 15, false);
             previousTime = timeLeft;
         }
@@ -271,7 +275,7 @@ void GameComplete() {
 
     if (stateChanged) {
         DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
-        snprintf(gameBuffer, countof(gameBuffer), "Your time:%02lu.sec", GAME_DURATION - timeLeft);
+        snprintf(gameBuffer, countof(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
         DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
         DrawText("Press OK to try again.", ST77XX_BLUE, 1, 45, 100, false);
         if (!tmrpcm.isPlaying()) {
@@ -398,10 +402,12 @@ void EnterInitials() {
     if (okBtnPressed) {
         switch (currentPos) {
             case 15:
-                firstLetter=letterBuffer[0];
+                firstLetter = letterBuffer[0];
+                letterBuffer[0] = 0x41;
                 break;
             case 35:
                 secondLetter = letterBuffer[0];
+                letterBuffer[0] = 0x41;
                 break;
             case 55:
                 thirdLetter = letterBuffer[0];
@@ -418,10 +424,11 @@ void EnterInitials() {
             gameBuffer[3] = '\0';
             DrawText("Successfully entered", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 10, 15, true);
             DrawText(gameBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 75, 80, false);
-            delay(10000);
+            delay(2000);
             currentState = IDLE;
             stateChanged = true;
             tmrpcm.stopPlayback();
+            UpdateHighScore(gameBuffer, timeGoneBy);
         }
 
     } else if (upBtnPressed) {
@@ -442,6 +449,68 @@ void EnterInitials() {
     }
 
 
+}
+
+void UpdateHighScore(char *initials, byte time) {
+    // Add First Entry.
+    if (highScoreEntriesCount == 0) {
+        AddHighScoreEntry(0, initials, time);
+
+        // Entry has worse time than current last place, but table is not full. add to last place.
+    } else if (time > highScoreEntries[highScoreEntriesCount - 1].time) {
+        if (highScoreEntriesCount != HIGH_SCORE_TABLE_SIZE) {
+            AddHighScoreEntry(highScoreEntriesCount, initials, time);
+        }
+
+        // Add entries sorted by time.
+    } else {
+        for (int i = 0; i < highScoreEntriesCount; i++) {
+            // Better time than entry at [i].
+            if (time < highScoreEntries[i].time) {
+                // Make space for entry.
+                MakeSpaceForHighScoreEntry(i);
+                // Add entry at index [i].
+                AddHighScoreEntry(i, initials, time);
+                break;
+            }
+        }
+    }
+}
+
+// Adds entry with values (initials and time) on the given index of the high-score table.
+void AddHighScoreEntry(int index, char *initials, byte time) {
+    strncpy(highScoreEntries[index].initials, initials, 4);
+    highScoreEntries[index].time = time;
+    if (highScoreEntriesCount != HIGH_SCORE_TABLE_SIZE) {
+        highScoreEntriesCount++;
+    }
+}
+
+// Push all entries after the index you want to replace one index up.(down on the high-score table)
+// Start from last entry to the entry you want to replace.
+void MakeSpaceForHighScoreEntry(int indexToReplace) {
+    for (int j = highScoreEntriesCount - 1; j >= indexToReplace; j--) {
+        // list is full, jump one index up to avoid adding entry out of bounds.
+        // Last entry will be replaced by the one over it( "Pushed" out of highscore list).
+        if (j == HIGH_SCORE_TABLE_SIZE - 1) {
+            continue;
+            // Push entry one index up (down on the high-score list).
+        } else {
+            //highScoreEntries[j] = highScoreEntries[j+1];
+            strncpy(highScoreEntries[j + 1].initials, highScoreEntries[j].initials, 4);
+            highScoreEntries[j + 1].time = highScoreEntries[j].time;
+        }
+    }
+}
+
+void PrintHighScoreTable() {
+    for (int i = 0; i < highScoreEntriesCount; i++) {
+        Serial.print(i + 1);
+        Serial.println(" Place:");
+        Serial.print(highScoreEntries[i].initials);
+        Serial.print("     ");
+        Serial.println(highScoreEntries[i].time);
+    }
 }
 
 void PrintStartMenu() {
