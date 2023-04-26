@@ -54,7 +54,7 @@ void setup() {
     pinMode(BTN_UP_PIN, INPUT_PULLUP);
     pinMode(BTN_DOWN_PIN, INPUT_PULLUP);
     pinMode(GOAL_PIN, INPUT_PULLUP);
-    digitalWrite(BUZZER_PIN, LOW);
+    // digitalWrite(BUZZER_PIN, LOW);
 
     // TFT
     TftInitiate();
@@ -83,6 +83,9 @@ void loop() {
             break;
         case GAME_DIFFICULTY:
             GameDifficulty();
+            break;
+        case ENTER_HIGHSCORE:
+            EnterInitials();
             break;
     }
 
@@ -185,8 +188,8 @@ void GameDifficulty() {
 void Game() {
 
     if (stateChanged) {
-        DrawText("GO GO GO!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 55, true);
-        DrawText("No time to loose!", ST77XX_BLUE, 2, 25, 85, false);
+        DrawText("GO GO GO!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 75, true);
+        DrawText("No time to loose!", ST77XX_BLUE, 2, 25, 105, false);
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("start.wav");
         }
@@ -208,15 +211,15 @@ void Game() {
             stateChanged = true;
         } else if (previousTime > timeLeft) {
             tmrpcm.stopPlayback();
-            // Change color on time when the time left decreases.
-            if (timeLeft <= 10) {
+            // Change color on timer when the time left decreases.
+            if (timeLeft <= (GAME_DURATION / 3)) {
                 textColor = ST77XX_RED;
-            } else if (timeLeft <= 20) {
+            } else if (timeLeft <= (GAME_DURATION / 3) * 2) {
                 textColor = ST77XX_YELLOW;
             }
-            DrawText(gameBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 100, 15, false);
+            DrawText(gameBuffer, ST77XX_BLACK, 6, 80, 15, false);
             snprintf(gameBuffer, countof(gameBuffer), "%02lu", timeLeft);
-            DrawText(gameBuffer, textColor, DEFAULT_TEXT_SIZE, 100, 15, false);
+            DrawText(gameBuffer, textColor, 6, 80, 15, false);
             previousTime = timeLeft;
         }
     }
@@ -229,7 +232,7 @@ void Game() {
             tmrpcm.stopPlayback();
             currentState = GAME_OVER;
             stateChanged = true;
-        } else{
+        } else {
             tmrpcm.play("over.wav");
             delay(200);
             tmrpcm.stopPlayback();
@@ -278,9 +281,14 @@ void GameComplete() {
     }
 
     byte buttonPressed = CheckButton(BTN_OK_PIN);
+    byte buttonDownPressed = CheckButton(BTN_DOWN_PIN);
     if (buttonPressed) {
         tmrpcm.stopPlayback();
         currentState = IDLE;
+        stateChanged = true;
+    } else if (buttonDownPressed) {
+        tmrpcm.stopPlayback();
+        currentState = ENTER_HIGHSCORE;
         stateChanged = true;
     }
 
@@ -367,6 +375,74 @@ void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
     DrawText(datestring, ST77XX_BLUE, DEFAULT_TEXT_SIZE, cursorX, cursorY, false);
 }
 
+void EnterInitials() {
+    static int currentPos;
+    static char letterBuffer[2];
+    static char firstLetter;
+    static char secondLetter;
+    static char thirdLetter;
+    if (stateChanged) {
+        memset(gameBuffer, 0, countof(gameBuffer)); // reset buffer incase of old values.
+        currentPos = 15;
+        letterBuffer[0] = 0x41;
+        letterBuffer[1] = '\0';
+        DrawText("A", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 15, 50, true);
+        DrawText("A", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 35, 50, false);
+        DrawText("A", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 55, 50, false);
+        stateChanged = false;
+    }
+    byte okBtnPressed = CheckButton(BTN_OK_PIN);
+    byte upBtnPressed = CheckButton(BTN_UP_PIN);
+    byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
+
+    if (okBtnPressed) {
+        switch (currentPos) {
+            case 15:
+                firstLetter=letterBuffer[0];
+                break;
+            case 35:
+                secondLetter = letterBuffer[0];
+                break;
+            case 55:
+                thirdLetter = letterBuffer[0];
+                break;
+            default:
+                Serial.println("Something went wrong!");
+                break;
+        }
+        currentPos = currentPos + 20;
+        if (currentPos > 55) {
+            gameBuffer[0] = firstLetter;
+            gameBuffer[1] = secondLetter;
+            gameBuffer[2] = thirdLetter;
+            gameBuffer[3] = '\0';
+            DrawText("Successfully entered", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 10, 15, true);
+            DrawText(gameBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 75, 80, false);
+            delay(10000);
+            currentState = IDLE;
+            stateChanged = true;
+            tmrpcm.stopPlayback();
+        }
+
+    } else if (upBtnPressed) {
+
+        DrawText(letterBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, currentPos, 50, false);
+        letterBuffer[0]++;
+        if (letterBuffer[0] > 0x5A) {
+            letterBuffer[0] = 0x41;
+        }
+        DrawText(letterBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, currentPos, 50, false);
+    } else if (downBtnPressed) {
+        DrawText(letterBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, currentPos, 50, false);
+        letterBuffer[0]--;
+        if (letterBuffer[0] < 0x41) {
+            letterBuffer[0] = 0x5A;
+        }
+        DrawText(letterBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, currentPos, 50, false);
+    }
+
+
+}
 
 void PrintStartMenu() {
     DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);

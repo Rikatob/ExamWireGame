@@ -52,7 +52,8 @@ enum State {
     GAME,
     GAME_OVER,
     GAME_COMPLETE,
-    GAME_DIFFICULTY
+    GAME_DIFFICULTY,
+    ENTER_HIGHSCORE
 };
 
 enum Difficulty {
@@ -71,7 +72,8 @@ unsigned long previousTime = 0;
 unsigned long timeGoneBy = 0;
 unsigned long timeLeft = 0;
 uint16_t textColor = 0;
-char gameBuffer[20] = "";
+char gameBuffer[20] = {0};
+
 //unsigned long currentTime = 0;
 int gameDuration = 20;
 
@@ -102,6 +104,8 @@ void PrintStartMenu();
 void PrintDifficultyMenu();
 
 void GameDifficulty();
+
+void EnterInitials();
 
 void MoveUpInMenu(int *currentPos);
 
