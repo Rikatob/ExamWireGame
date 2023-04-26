@@ -1,10 +1,10 @@
 
 // EKSAMEN EMBEDDED SYSTEMS
-//////////////////////////////////////////////////////////////////////////////
-// TODO Change some statics (or all) to global variables.                   //
-// TODO Use highscore temp to illustrate adding highscores to rtc memory.   //
-// TODO
-//////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+// TODO[ ] Change some statics (or all) to global variables.                   //
+// TODO[x] Use highscore temp to illustrate adding highscores to rtc memory.   //
+// TODO[ ] Make the highscore table stored in RTC memory.                      //
+/////////////////////////////////////////////////////////////////////////////////
 /*
 <<<<<<<<SPI>>>>>>>>>
 CS    -> 10 ( CHIP SELECT TFT)
