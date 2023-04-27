@@ -48,7 +48,6 @@ RtcDateTime currentTime;
 
 void setup() {
     Serial.begin(9600);
-
     // Use pullup to get less components on the board,
     // estimated 20 - 50 K resistor in arduino,
     // if i want to have more control later on i can use pulldown and and add the chosen resistor.
@@ -60,20 +59,20 @@ void setup() {
     pinMode(GOAL_PIN, INPUT_PULLUP);
     // digitalWrite(BUZZER_PIN, LOW);
 
-    // TFT
-    TftInitiate();
-
-    //PCM
-    PcmInitiate();
+    // Load the high scores from rtc memory.
+    ReadEntriesFromRtcMemory();
+    delay(100);
 
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
-
+    delay(100);
+    // TFT
+    TftInitiate();
+    delay(100);
+    //PCM
+    PcmInitiate();
+    delay(100);
     // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
-
-    // Load the high scores from rtc memory.
-    ReadEntriesFromRtcMemory();
-
 }
 
 void loop() {
@@ -97,9 +96,10 @@ void loop() {
         case ENTER_HIGHSCORE:
             EnterHighscore();
             break;
+        case PRINT_HIGHSCORE:
+            PrintHighScoreTable();
+            break;
     }
-
-
 }
 
 // TODO StopPlayback in stateChanged if statment in every function
@@ -120,6 +120,7 @@ void Idle() {
     byte okBtnPressed = CheckButton(BTN_OK_PIN);
     byte upBtnPressed = CheckButton(BTN_UP_PIN);
     byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
+
     // Ok button pressed -> Do what user have chosen.
     if (okBtnPressed) {
 
@@ -137,7 +138,9 @@ void Idle() {
 
             // Print high-score.
         } else if (currentPos == 71) {
-            PrintHighScoreTable();
+            tmrpcm.stopPlayback();
+            currentState = PRINT_HIGHSCORE;
+            stateChanged = true;
         }
 
     }
@@ -213,7 +216,7 @@ void Game() {
         currentTime = Rtc.GetDateTime();
         timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
         timeLeft = GAME_DURATION - timeGoneBy;
-        snprintf(gameBuffer, countof(gameBuffer), "%02lu", previousTime);
+        snprintf(gameBuffer, ArraySize(gameBuffer), "%02lu", previousTime);
 
         if (timeLeft == 0) {
             tmrpcm.stopPlayback();
@@ -228,7 +231,7 @@ void Game() {
                 textColor = ST77XX_YELLOW;
             }
             DrawText(gameBuffer, ST77XX_BLACK, 6, 80, 15, false);
-            snprintf(gameBuffer, countof(gameBuffer), "%02d", timeLeft);
+            snprintf(gameBuffer, ArraySize(gameBuffer), "%02d", timeLeft);
             DrawText(gameBuffer, textColor, 6, 80, 15, false);
             previousTime = timeLeft;
         }
@@ -276,14 +279,14 @@ void GameOver() {
     }
 }
 
-
 void GameComplete() {
 
     if (stateChanged) {
         DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
-        snprintf(gameBuffer, countof(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
+        snprintf(gameBuffer, ArraySize(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
         DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
         DrawText("Press OK to try again.", ST77XX_BLUE, 1, 45, 100, false);
+        DrawText("Press DOWN to enter high-score.", ST77XX_BLUE, 1, 45, 110, false);
         if (!tmrpcm.isPlaying()) {
             tmrpcm.play("complete.wav");
         }
@@ -314,7 +317,6 @@ byte CheckButton(byte buttonPin) {
     }
     return false;
 }
-
 
 void TftInitiate() {
     // Reset the TFT to get a "clean" start.
@@ -373,7 +375,7 @@ void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
     char datestring[20];
 
     snprintf_P(datestring,
-               countof(datestring),
+               ArraySize(datestring),
                PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
                dt.Month(),
                dt.Day(),
@@ -403,7 +405,7 @@ int EnterInitials() {
     static char secondLetter;
     static char thirdLetter;
     if (stateChanged) {
-        memset(gameBuffer, 0, countof(gameBuffer)); // reset buffer incase of old values.
+        memset(gameBuffer, 0, ArraySize(gameBuffer)); // reset buffer incase of old values.
         currentPos = 15;
         letterBuffer[0] = 0x41;
         letterBuffer[1] = '\0';
@@ -496,7 +498,7 @@ void UpdateHighScore(char *initials, byte time) {
 void AddHighScoreEntry(int index, char *initials, byte time) {
     strncpy(highScoreEntries[index].initials, initials, 4);
     highScoreEntries[index].time = time;
-    if (highScoreEntriesCount != HIGH_SCORE_TABLE_SIZE) {
+    if (highScoreEntriesCount < HIGH_SCORE_TABLE_SIZE) {
         highScoreEntriesCount++;
     }
 }
@@ -519,20 +521,63 @@ void MakeSpaceForHighScoreEntry(int indexToReplace) {
 }
 
 void PrintHighScoreTable() {
-    for (int i = 0; i < highScoreEntriesCount; i++) {
-        Serial.print(i + 1);
-        Serial.println(" Place:");
-        Serial.print(highScoreEntries[i].initials);
-        Serial.print("     ");
-        Serial.println(highScoreEntries[i].time);
+    if (stateChanged) {
+        uint16_t color;
+        byte xCorr;
+        byte yCorr;
+        stateChanged = false;
+
+        DrawText("HIGH SCORES", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 20, 5, true);
+        for (int i = 0; i < highScoreEntriesCount; i++) {
+            ResetGameBuffer();
+            snprintf(gameBuffer, ArraySize(gameBuffer), "%d Place:", i + 1);
+
+            switch (i) {
+                case 0:
+                    color = ST77XX_BLUE;
+                    xCorr = 15;
+                    yCorr = 35;
+                    break;
+                case 1:
+                    color = ST77XX_YELLOW;
+                    xCorr = 15;
+                    yCorr = 70;
+                    break;
+                case 2:
+                    color = ST77XX_RED;
+                    xCorr = 15;
+                    yCorr = 105;
+                    break;
+                default:
+                    color = ST77XX_BLUE;
+                    xCorr = 0;
+                    yCorr = 0;
+            }
+            DrawText(gameBuffer, color, DEFAULT_TEXT_SIZE - 1, xCorr, yCorr, false);
+
+            ResetGameBuffer();
+            snprintf(gameBuffer, ArraySize(gameBuffer), "%s %02d.sec", highScoreEntries[i].initials,
+                     highScoreEntries[i].time);
+
+            DrawText(gameBuffer, color, DEFAULT_TEXT_SIZE - 1, xCorr + 15, yCorr + 17, false);
+        }
     }
+    byte okBtnPressed = CheckButton(BTN_OK_PIN);
+    byte upBtnPressed = CheckButton(BTN_UP_PIN);
+    byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
+    if (okBtnPressed || upBtnPressed || downBtnPressed) {
+        tmrpcm.stopPlayback();
+        currentState = IDLE;
+        stateChanged = true;
+    }
+
 }
 
 void PrintStartMenu() {
-    DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 10, true);
-    DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
-    DrawText("Difficulty.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 40, false);
-    DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 70, false);
+    DrawText("Start game.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 25, 10, true);
+    DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, 11, false);
+    DrawText("Difficulty.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 25, 40, false);
+    DrawText("High-score.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 25, 70, false);
 }
 
 void PrintDifficultyMenu() {
@@ -542,6 +587,7 @@ void PrintDifficultyMenu() {
     DrawText("Hard.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 70, false);
 }
 
+// Writes the high-score entries to the RTC memory in the format listed below.
 // [x] = 1 byte.
 // [entryCount][inital][inital][inital][ZeroTerminator][time]
 void WriteEntriesToRtcMemory() {
@@ -560,6 +606,7 @@ void WriteEntriesToRtcMemory() {
     Serial.println(error);
 }
 
+// Get high-score entries from RTC memory and update the highScoreEntries array accordingly.
 void ReadEntriesFromRtcMemory() {
     byte entry = 0;
     byte initialsIndex = 0;
@@ -571,7 +618,14 @@ void ReadEntriesFromRtcMemory() {
     Wire.endTransmission();
     // Request.
     Wire.requestFrom(0x57, 1);
-    highScoreEntriesCount = Wire.read();
+    byte countTemp = Wire.read();
+
+    // Check for the first byte is not ovcer the maximum size of highScoreEntries array.(Should not happen)
+    if (countTemp <= HIGH_SCORE_TABLE_SIZE) {
+        highScoreEntriesCount = countTemp;
+    } else {
+        highScoreEntriesCount = 0;
+    }
 
     // Delay to before starting a new conversation.
     delay(100);
@@ -606,18 +660,24 @@ void ReadEntriesFromRtcMemory() {
     }
 }
 
+void ResetGameBuffer() {
+    memset(gameBuffer, 0, ArraySize(gameBuffer)); // "Reset" buffer.
+}
+
 void MoveUpInMenu(int *currentPos) {
-    // If currentPos is 10, then it cant go up.
-    if (*currentPos != 11) {
-        DrawText("->", ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    // Highest position in menu screen is y = 11.
+    if (*currentPos > 11) {
+        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
         *currentPos -= 30;
-        DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
     }
 }
 
 void MoveDownInMenu(int *currentPos) {
-
-    DrawText("->", ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
-    *currentPos += 30;
-    DrawText("->", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    // Lowest position in menu screen is y = 71.
+    if (*currentPos < 71) {
+        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+        *currentPos += 30;
+        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    }
 }

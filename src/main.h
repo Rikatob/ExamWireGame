@@ -33,7 +33,7 @@
 #define GAME_DURATION 30
 #define HIGH_SCORE_TABLE_SIZE 3
 /*Macro for length of array in printDateTime*/
-#define countof(a) (sizeof(a) / sizeof(a[0]))
+#define ArraySize(a) (sizeof(a) / sizeof(a[0]))
 
 /////////////////////////////////////////////////////Variables/////////////////////////////////////////////////////
 /*
@@ -56,7 +56,8 @@ enum State {
     GAME_OVER,
     GAME_COMPLETE,
     GAME_DIFFICULTY,
-    ENTER_HIGHSCORE
+    ENTER_HIGHSCORE,
+    PRINT_HIGHSCORE
 };
 
 enum Difficulty {
@@ -65,7 +66,7 @@ enum Difficulty {
     HARD = 1
 };
 
-typedef struct _HighScoreEntry{
+typedef struct _HighScoreEntry {
     char initials[4]; // "AAA" + zero terminator.
     byte time;
 } HighScoreEntry;
@@ -82,6 +83,7 @@ byte timeGoneBy = 0;
 byte timeLeft = 0;
 uint16_t textColor = 0;
 char gameBuffer[20] = {0};
+char pzAsciArrow[2] = {(char) -81, '\0'};
 HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
 //unsigned long currentTime = 0;
 int gameDuration = 20;
@@ -118,9 +120,9 @@ void EnterHighscore();
 
 int EnterInitials();
 
-void UpdateHighScore(char * initials, byte time);
+void UpdateHighScore(char *initials, byte time);
 
-void AddHighScoreEntry(int index, char * initials, byte time);
+void AddHighScoreEntry(int index, char *initials, byte time);
 
 void MakeSpaceForHighScoreEntry(int indexToReplace);
 
@@ -129,6 +131,8 @@ void PrintHighScoreTable();
 void WriteEntriesToRtcMemory();
 
 void ReadEntriesFromRtcMemory();
+
+void ResetGameBuffer();
 
 void MoveUpInMenu(int *currentPos);
 
