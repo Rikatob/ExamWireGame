@@ -15,6 +15,8 @@
 #include <TMRpcm.h>
 */
 //////////////////////////////////////////////////////Defines//////////////////////////////////////////////////////
+#define DONE 2
+#define NOT_DONE 3
 #define WIRE_PIN 2
 #define BUZZER_PIN 9
 #define BTN_OK_PIN 4
@@ -112,7 +114,9 @@ void PrintDifficultyMenu();
 
 void GameDifficulty();
 
-void EnterInitials();
+void EnterHighscore();
+
+int EnterInitials();
 
 void UpdateHighScore(char * initials, byte time);
 
@@ -121,6 +125,10 @@ void AddHighScoreEntry(int index, char * initials, byte time);
 void MakeSpaceForHighScoreEntry(int indexToReplace);
 
 void PrintHighScoreTable();
+
+void WriteEntriesToRtcMemory();
+
+void ReadEntriesFromRtcMemory();
 
 void MoveUpInMenu(int *currentPos);
 

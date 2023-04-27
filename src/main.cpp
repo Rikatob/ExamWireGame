@@ -62,11 +62,17 @@ void setup() {
 
     // TFT
     TftInitiate();
+
     //PCM
     PcmInitiate();
+
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
+
     // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
+
+    // Load the high scores from rtc memory.
+    ReadEntriesFromRtcMemory();
 
 }
 
@@ -89,7 +95,7 @@ void loop() {
             GameDifficulty();
             break;
         case ENTER_HIGHSCORE:
-            EnterInitials();
+            EnterHighscore();
             break;
     }
 
@@ -379,7 +385,18 @@ void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
     DrawText(datestring, ST77XX_BLUE, DEFAULT_TEXT_SIZE, cursorX, cursorY, false);
 }
 
-void EnterInitials() {
+void EnterHighscore() {
+
+    int iReturnCode = EnterInitials();
+    if (iReturnCode == DONE) {
+        tmrpcm.stopPlayback();
+        UpdateHighScore(gameBuffer, timeGoneBy);
+        currentState = IDLE;
+        stateChanged = true;
+    }
+}
+
+int EnterInitials() {
     static int currentPos;
     static char letterBuffer[2];
     static char firstLetter;
@@ -425,20 +442,17 @@ void EnterInitials() {
             DrawText("Successfully entered", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 10, 15, true);
             DrawText(gameBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 75, 80, false);
             delay(2000);
-            currentState = IDLE;
-            stateChanged = true;
-            tmrpcm.stopPlayback();
-            UpdateHighScore(gameBuffer, timeGoneBy);
+            return DONE;
         }
 
     } else if (upBtnPressed) {
-
         DrawText(letterBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, currentPos, 50, false);
         letterBuffer[0]++;
         if (letterBuffer[0] > 0x5A) {
             letterBuffer[0] = 0x41;
         }
         DrawText(letterBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, currentPos, 50, false);
+
     } else if (downBtnPressed) {
         DrawText(letterBuffer, ST77XX_BLACK, DEFAULT_TEXT_SIZE, currentPos, 50, false);
         letterBuffer[0]--;
@@ -447,8 +461,7 @@ void EnterInitials() {
         }
         DrawText(letterBuffer, ST77XX_BLUE, DEFAULT_TEXT_SIZE, currentPos, 50, false);
     }
-
-
+    return NOT_DONE;
 }
 
 void UpdateHighScore(char *initials, byte time) {
@@ -475,6 +488,8 @@ void UpdateHighScore(char *initials, byte time) {
             }
         }
     }
+    // Update the highscore list in rtc memory.
+    WriteEntriesToRtcMemory();
 }
 
 // Adds entry with values (initials and time) on the given index of the high-score table.
@@ -527,6 +542,69 @@ void PrintDifficultyMenu() {
     DrawText("Hard.", ST77XX_BLUE, DEFAULT_TEXT_SIZE, 40, 70, false);
 }
 
+// [x] = 1 byte.
+// [entryCount][inital][inital][inital][ZeroTerminator][time]
+void WriteEntriesToRtcMemory() {
+    Wire.beginTransmission(0x57);
+    Wire.write(0x00);
+    Wire.write(0x00);
+    Wire.write(highScoreEntriesCount);
+    for (int i = 0; i < highScoreEntriesCount; i++) {
+        for (int j = 0; j < 4; j++) {
+            Wire.write(highScoreEntries[i].initials[j]);
+        }
+        Wire.write(highScoreEntries[i].time);
+    }
+    byte error = Wire.endTransmission();
+    Serial.print("Return Code RtcMemory Write: ");
+    Serial.println(error);
+}
+
+void ReadEntriesFromRtcMemory() {
+    byte entry = 0;
+    byte initialsIndex = 0;
+
+    // Memory address to read from.
+    Wire.beginTransmission(0x57);
+    Wire.write(0x00);
+    Wire.write(0x00);
+    Wire.endTransmission();
+    // Request.
+    Wire.requestFrom(0x57, 1);
+    highScoreEntriesCount = Wire.read();
+
+    // Delay to before starting a new conversation.
+    delay(100);
+
+    // Memory address to read from.
+    Wire.beginTransmission(0x57);
+    Wire.write(0x00);
+    Wire.write(0x01);
+    Wire.endTransmission();
+    // Request.
+    Wire.requestFrom(0x57, highScoreEntriesCount * 5); // amount of entries * size of each entry.
+
+    while (Wire.available()) {
+
+        // Check if memory has more entries than expressed by count (first byte in rtc memory).
+        // It will result in problems in the rest of the code
+        // and if highScoreEntries = HIGH_SCORE_TABLE_SIZE it will result in buffer overflow.
+        if (entry > highScoreEntriesCount - 1) {
+            Serial.println(" Something went wrong trying to read Rtc memory");
+            return;
+        }
+        // Read the initials and the zero terminator.
+        if (initialsIndex < 5) {
+            highScoreEntries[entry].initials[initialsIndex] = (char) Wire.read();
+            initialsIndex++;
+            // Read the time of the entry.
+        } else {
+            initialsIndex = 0;
+            highScoreEntries[entry].time = Wire.read();
+            entry++;
+        }
+    }
+}
 
 void MoveUpInMenu(int *currentPos) {
     // If currentPos is 10, then it cant go up.
