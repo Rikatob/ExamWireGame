@@ -594,7 +594,7 @@ void ReadEntriesFromRtcMemory() {
             return;
         }
         // Read the initials and the zero terminator.
-        if (initialsIndex < 5) {
+        if (initialsIndex < 4) {
             highScoreEntries[entry].initials[initialsIndex] = (char) Wire.read();
             initialsIndex++;
             // Read the time of the entry.
