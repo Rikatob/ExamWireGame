@@ -77,6 +77,7 @@ bool stateChanged = true; // Set it to true so the first time idle runs the "set
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
 byte playerLives = 0;
 byte highScoreEntriesCount = 0;
+byte currentPos = 0;
 unsigned long lastTimeButtonWasPressed = 0;
 unsigned long previousTime = 0;
 byte timeGoneBy = 0;
@@ -134,8 +135,8 @@ void ReadEntriesFromRtcMemory();
 
 void ResetGameBuffer();
 
-void MoveUpInMenu(int *currentPos);
+void MoveUpInMenu();
 
-void MoveDownInMenu(int *currentPos);
+void MoveDownInMenu();
 
 #endif //EXAMEMBEDDED_MAIN_H

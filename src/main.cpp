@@ -104,8 +104,6 @@ void loop() {
 // TODO StopPlayback in stateChanged if statment in every function
 void Idle() {
 
-    static int currentPos;
-
     if (stateChanged) {
         //tmrpcm.play("test.wav");              // TODO NEED TO CHANGE THIS SOUND
         currentPos = 11;
@@ -145,15 +143,15 @@ void Idle() {
 
     }
     if (upBtnPressed) {
-        MoveUpInMenu(&currentPos);
+        MoveUpInMenu();
     }
     if (downBtnPressed) {
-        MoveDownInMenu(&currentPos);
+        MoveDownInMenu();
     }
 }
 
 void GameDifficulty() {
-    static int currentPos;
+
     if (stateChanged) {
         currentPos = 11;
         PrintDifficultyMenu();
@@ -187,10 +185,10 @@ void GameDifficulty() {
         }
     }
     if (upBtnPressed) {
-        MoveUpInMenu(&currentPos);
+        MoveUpInMenu();
     }
     if (downBtnPressed) {
-        MoveDownInMenu(&currentPos);
+        MoveDownInMenu();
     }
 }
 
@@ -401,7 +399,6 @@ void EnterHighscore() {
 }
 
 int EnterInitials() {
-    static int currentPos;
     static char letterBuffer[2];
     static char firstLetter;
     static char secondLetter;
@@ -666,20 +663,20 @@ void ResetGameBuffer() {
     memset(gameBuffer, 0, ArraySize(gameBuffer)); // "Reset" buffer.
 }
 
-void MoveUpInMenu(int *currentPos) {
+void MoveUpInMenu() {
     // Highest position in menu screen is y = 11.
-    if (*currentPos > 11) {
-        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
-        *currentPos -= 30;
-        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    if (currentPos > 11) {
+        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, currentPos, false);
+        currentPos -= 30;
+        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, currentPos, false);
     }
 }
 
-void MoveDownInMenu(int *currentPos) {
+void MoveDownInMenu() {
     // Lowest position in menu screen is y = 71.
-    if (*currentPos < 71) {
-        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
-        *currentPos += 30;
-        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, *currentPos, false);
+    if (currentPos < 71) {
+        DrawText(pzAsciArrow, ST77XX_BLACK, DEFAULT_TEXT_SIZE, 0, currentPos, false);
+        currentPos += 30;
+        DrawText(pzAsciArrow, ST77XX_BLUE, DEFAULT_TEXT_SIZE, 0, currentPos, false);
     }
 }
