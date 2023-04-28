@@ -61,17 +61,16 @@ void setup() {
 
     // Load the high scores from rtc memory.
     ReadEntriesFromRtcMemory();
-    delay(100);
 
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
-    delay(100);
+
     // TFT
     TftInitiate();
-    delay(100);
+
     //PCM
     PcmInitiate();
-    delay(100);
+
     // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
 }
 
@@ -108,13 +107,14 @@ void Idle() {
     static int currentPos;
 
     if (stateChanged) {
+        //tmrpcm.play("test.wav");              // TODO NEED TO CHANGE THIS SOUND
         currentPos = 11;
         PrintStartMenu();
         stateChanged = false;
     }
 
     if (!tmrpcm.isPlaying()) {
-        //tmrpcm.play("test.wav");              // TODO NEED TO CHANGE THIS SOUND
+        tmrpcm.stopPlayback();
     }
 
     byte okBtnPressed = CheckButton(BTN_OK_PIN);
@@ -201,11 +201,9 @@ void GameDifficulty() {
 void Game() {
 
     if (stateChanged) {
+        tmrpcm.play("start.wav");
         DrawText("GO GO GO!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 75, true);
         DrawText("No time to loose!", ST77XX_BLUE, 2, 25, 105, false);
-        if (!tmrpcm.isPlaying()) {
-            tmrpcm.play("start.wav");
-        }
         playerLives = difficulty;
         textColor = ST77XX_BLUE;
         previousTime = GAME_DURATION; // Initial set it to duration of game.
@@ -213,6 +211,7 @@ void Game() {
         stateChanged = false;
     }
     if (!tmrpcm.isPlaying()) {
+        tmrpcm.stopPlayback();
         currentTime = Rtc.GetDateTime();
         timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
         timeLeft = GAME_DURATION - timeGoneBy;
@@ -264,11 +263,12 @@ void Game() {
 */
 void GameOver() {
     if (stateChanged) {
+        tmrpcm.play("over.wav");
         DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
-        if (!tmrpcm.isPlaying()) {
-            tmrpcm.play("over.wav");
-        }
         stateChanged = false;
+    }
+    if (!tmrpcm.isPlaying()) {
+        tmrpcm.stopPlayback();
     }
 
     byte buttonPressed = CheckButton(BTN_OK_PIN);
@@ -282,15 +282,16 @@ void GameOver() {
 void GameComplete() {
 
     if (stateChanged) {
+        tmrpcm.play("complete.wav");
         DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
         snprintf(gameBuffer, ArraySize(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
         DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
         DrawText("Press OK to try again.", ST77XX_BLUE, 1, 45, 100, false);
         DrawText("Press DOWN to enter high-score.", ST77XX_BLUE, 1, 45, 110, false);
-        if (!tmrpcm.isPlaying()) {
-            tmrpcm.play("complete.wav");
-        }
         stateChanged = false;
+    }
+    if (!tmrpcm.isPlaying()) {
+        tmrpcm.stopPlayback();
     }
 
     byte buttonPressed = CheckButton(BTN_OK_PIN);
@@ -308,6 +309,7 @@ void GameComplete() {
 }
 
 byte CheckButton(byte buttonPin) {
+
     if (millis() - lastTimeButtonWasPressed > debounceDuration) {
         byte buttonState = digitalRead(buttonPin);
         if (!buttonState) {
