@@ -17,18 +17,20 @@
 //////////////////////////////////////////////////////Defines//////////////////////////////////////////////////////
 #define DONE 2
 #define NOT_DONE 3
-#define WIRE_PIN 2
-#define BUZZER_PIN 9
-#define BTN_OK_PIN 4
-#define BTN_UP_PIN A1
-#define BTN_DOWN_PIN A0
 
-#define GOAL_PIN 5
+// GamePins
+#define WIRE_PIN 5
+#define BUZZER_PIN 12
+#define BTN_OK_PIN 6
+#define BTN_UP_PIN 9
+#define BTN_DOWN_PIN 10
+
+#define GOAL_PIN 11
 // TFT
-#define SD_CS 7
-#define TFT_CS 10
-#define TFT_RST 3
-#define TFT_DC 8
+#define SD_CS 16
+#define TFT_CS 8
+#define TFT_RST 14
+#define TFT_DC 15
 #define DEFAULT_TEXT_SIZE 3
 #define GAME_DURATION 30
 #define HIGH_SCORE_TABLE_SIZE 3
