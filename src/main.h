@@ -105,8 +105,6 @@ byte CheckButton(byte buttonPin);
 
 void TftInitiate();
 
-void PcmInitiate();
-
 void CalibrateRtc();
 
 void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
