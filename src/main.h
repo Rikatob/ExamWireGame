@@ -7,16 +7,12 @@
 
 #include <Arduino.h>
 #include <RtcDS3231.h>
-/*
-#include <Adafruit_GFX.h>
-#include <Adafruit_ST7789.h>
-#include <SPI.h>
-#include <SD.h>
-#include <TMRpcm.h>
-*/
+
 //////////////////////////////////////////////////////Defines//////////////////////////////////////////////////////
-#define DONE 2
-#define NOT_DONE 3
+
+// Game settings
+#define GAME_DURATION 30
+#define HIGH_SCORE_TABLE_SIZE 3
 
 // GamePins
 #define WIRE_PIN 5
@@ -24,34 +20,24 @@
 #define BTN_OK_PIN 6
 #define BTN_UP_PIN 9
 #define BTN_DOWN_PIN 10
-
 #define GOAL_PIN 11
+
 // TFT
 #define SD_CS 16
 #define TFT_CS 8
 #define TFT_RST 14
 #define TFT_DC 15
 #define DEFAULT_TEXT_SIZE 3
-#define GAME_DURATION 30
-#define HIGH_SCORE_TABLE_SIZE 3
+
+// Return codes
+#define DONE 2
+#define NOT_DONE 3
+
 /*Macro for length of array in printDateTime*/
 #define ArraySize(a) (sizeof(a) / sizeof(a[0]))
 
-/////////////////////////////////////////////////////Variables/////////////////////////////////////////////////////
-/*
-        STATE MACHINE
-IDLE
--> Play idle music.
--> check if startGame button is pressed.
+/////////////////////////////////////////////////////ENUMS/STRUCTS/////////////////////////////////////////////////////
 
-GAME
--> Start timer.
--> Check wire.
-
-GAME_OVER
--> Show score.
--> play game over music.
-*/
 enum State {
     IDLE,
     GAME,
@@ -73,23 +59,22 @@ typedef struct _HighScoreEntry {
     byte time;
 } HighScoreEntry;
 
+/////////////////////////////////////////////////////Variables/////////////////////////////////////////////////////
+unsigned long lastTimeButtonWasPressed = 0;
+unsigned long previousTime = 0;
 enum State currentState = IDLE; // Default state as idle.
 enum Difficulty difficulty = EASY; // default difficulty easy.
 bool stateChanged = true; // Set it to true so the first time idle runs the "setup" for idle state.
+char gameBuffer[20] = {0};
+char pzAsciArrow[2] = {(char) -81, '\0'};
+uint16_t textColor = 0;
 byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
 byte playerLives = 0;
 byte highScoreEntriesCount = 0;
 byte currentPos = 0;
-unsigned long lastTimeButtonWasPressed = 0;
-unsigned long previousTime = 0;
 byte timeGoneBy = 0;
 byte timeLeft = 0;
-uint16_t textColor = 0;
-char gameBuffer[20] = {0};
-char pzAsciArrow[2] = {(char) -81, '\0'};
 HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
-//unsigned long currentTime = 0;
-int gameDuration = 20;
 
 //////////////////////////////////////////////////Function prototypes//////////////////////////////////////////////////
 
