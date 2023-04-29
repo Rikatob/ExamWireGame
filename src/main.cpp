@@ -32,7 +32,7 @@ SCL -> A5 (CLOCK LINE)
 <<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
 */
 #include <SD.h>
-#include <TMRpcm.h>
+//#include <TMRpcm.h>
 /*
 <<<<<<<<<<<<<<<<<<<< DS3231 >>>>>>>>>>>>>>>>>>>>
 */
@@ -41,7 +41,7 @@ SCL -> A5 (CLOCK LINE)
 
 ///////////////////////////////////////////////////Objects/Inits///////////////////////////////////////////////////
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
-TMRpcm tmrpcm;
+//TMRpcm tmrpcm;
 RtcDS3231<TwoWire> Rtc(Wire);
 RtcDateTime startTime;
 RtcDateTime currentTime;
@@ -59,17 +59,18 @@ void setup() {
     pinMode(GOAL_PIN, INPUT_PULLUP);
     // digitalWrite(BUZZER_PIN, LOW);
 
-    // Load the high scores from rtc memory.
-    ReadEntriesFromRtcMemory();
 
     // Initiate REAL TIME CLOCK (DS3231).
     Rtc.Begin();
+
+    // Load the high scores from rtc memory.
+    ReadEntriesFromRtcMemory();
 
     // TFT
     TftInitiate();
 
     //PCM
-    PcmInitiate();
+    // PcmInitiate();
 
     // CalibrateRtc();   // TODO THIS FUCKS UP THE BUZZER
 }
@@ -110,11 +111,11 @@ void Idle() {
         PrintStartMenu();
         stateChanged = false;
     }
-
+/*
     if (!tmrpcm.isPlaying()) {
         tmrpcm.stopPlayback();
     }
-
+*/
     byte okBtnPressed = CheckButton(BTN_OK_PIN);
     byte upBtnPressed = CheckButton(BTN_UP_PIN);
     byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
@@ -124,19 +125,19 @@ void Idle() {
 
         // Start game.
         if (currentPos == 11) {
-            tmrpcm.stopPlayback();
+            //tmrpcm.stopPlayback();
             currentState = GAME;
             stateChanged = true;
 
             // Change difficulty
         } else if (currentPos == 41) {
-            tmrpcm.stopPlayback();
+            //tmrpcm.stopPlayback();
             currentState = GAME_DIFFICULTY;
             stateChanged = true;
 
             // Print high-score.
         } else if (currentPos == 71) {
-            tmrpcm.stopPlayback();
+            //tmrpcm.stopPlayback();
             currentState = PRINT_HIGHSCORE;
             stateChanged = true;
         }
@@ -199,7 +200,7 @@ void GameDifficulty() {
 void Game() {
 
     if (stateChanged) {
-        tmrpcm.play("start.wav");
+        //tmrpcm.play("start.wav");
         DrawText("GO GO GO!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 75, true);
         DrawText("No time to loose!", ST77XX_BLUE, 2, 25, 105, false);
         playerLives = difficulty;
@@ -208,19 +209,19 @@ void Game() {
         startTime = Rtc.GetDateTime();
         stateChanged = false;
     }
-    if (!tmrpcm.isPlaying()) {
-        tmrpcm.stopPlayback();
+    if (1 == 1) {
+        //tmrpcm.stopPlayback();
         currentTime = Rtc.GetDateTime();
         timeGoneBy = currentTime.TotalSeconds() - startTime.TotalSeconds();
         timeLeft = GAME_DURATION - timeGoneBy;
         snprintf(gameBuffer, ArraySize(gameBuffer), "%02lu", previousTime);
 
         if (timeLeft == 0) {
-            tmrpcm.stopPlayback();
+            //tmrpcm.stopPlayback();
             currentState = GAME_OVER;
             stateChanged = true;
         } else if (previousTime > timeLeft) {
-            tmrpcm.stopPlayback();
+            // tmrpcm.stopPlayback();
             // Change color on timer when the time left decreases.
             if (timeLeft <= (GAME_DURATION / 3)) {
                 textColor = ST77XX_RED;
@@ -239,18 +240,18 @@ void Game() {
     if (wireState == LOW) {
         playerLives--;
         if (playerLives == 0) {
-            tmrpcm.stopPlayback();
+            //  tmrpcm.stopPlayback();
             currentState = GAME_OVER;
             stateChanged = true;
         } else {
-            tmrpcm.play("over.wav");
+            //   tmrpcm.play("over.wav");
             delay(200);
-            tmrpcm.stopPlayback();
+            // tmrpcm.stopPlayback();
         }
 
     }
     if (goalPinState == LOW) {
-        tmrpcm.stopPlayback();
+        //tmrpcm.stopPlayback();
         currentState = GAME_COMPLETE;
         stateChanged = true;
     }
@@ -261,17 +262,18 @@ void Game() {
 */
 void GameOver() {
     if (stateChanged) {
-        tmrpcm.play("over.wav");
+        //  tmrpcm.play("over.wav");
         DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
         stateChanged = false;
     }
+    /*
     if (!tmrpcm.isPlaying()) {
         tmrpcm.stopPlayback();
     }
-
+*/
     byte buttonPressed = CheckButton(BTN_OK_PIN);
     if (buttonPressed) {
-        tmrpcm.stopPlayback();
+        //tmrpcm.stopPlayback();
         currentState = IDLE;
         stateChanged = true;
     }
@@ -280,7 +282,7 @@ void GameOver() {
 void GameComplete() {
 
     if (stateChanged) {
-        tmrpcm.play("complete.wav");
+        //tmrpcm.play("complete.wav");
         DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
         snprintf(gameBuffer, ArraySize(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
         DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
@@ -288,18 +290,18 @@ void GameComplete() {
         DrawText("Press DOWN to enter high-score.", ST77XX_BLUE, 1, 45, 110, false);
         stateChanged = false;
     }
-    if (!tmrpcm.isPlaying()) {
+    /*if (!tmrpcm.isPlaying()) {
         tmrpcm.stopPlayback();
     }
-
+*/
     byte buttonPressed = CheckButton(BTN_OK_PIN);
     byte buttonDownPressed = CheckButton(BTN_DOWN_PIN);
     if (buttonPressed) {
-        tmrpcm.stopPlayback();
+        //tmrpcm.stopPlayback();
         currentState = IDLE;
         stateChanged = true;
     } else if (buttonDownPressed) {
-        tmrpcm.stopPlayback();
+        //tmrpcm.stopPlayback();
         currentState = ENTER_HIGHSCORE;
         stateChanged = true;
     }
@@ -331,7 +333,7 @@ void TftInitiate() {
     tft.setRotation(1);
 }
 
-
+/*
 void PcmInitiate() {
     tmrpcm.speakerPin = BUZZER_PIN;
     if (!SD.begin(SD_CS)) {
@@ -341,7 +343,7 @@ void PcmInitiate() {
     tmrpcm.setVolume(5);
     tmrpcm.quality(true);
 }
-
+*/
 void CalibrateRtc() {
     RtcDateTime compiled = RtcDateTime(__DATE__, __TIME__);
     RtcDateTime now = Rtc.GetDateTime();
@@ -391,7 +393,7 @@ void EnterHighscore() {
 
     int iReturnCode = EnterInitials();
     if (iReturnCode == DONE) {
-        tmrpcm.stopPlayback();
+        // tmrpcm.stopPlayback();
         UpdateHighScore(gameBuffer, timeGoneBy);
         currentState = IDLE;
         stateChanged = true;
@@ -565,7 +567,7 @@ void PrintHighScoreTable() {
     byte upBtnPressed = CheckButton(BTN_UP_PIN);
     byte downBtnPressed = CheckButton(BTN_DOWN_PIN);
     if (okBtnPressed || upBtnPressed || downBtnPressed) {
-        tmrpcm.stopPlayback();
+        // tmrpcm.stopPlayback();
         currentState = IDLE;
         stateChanged = true;
     }
