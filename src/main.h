@@ -87,6 +87,7 @@ const char *death = "Death March:d=4,o=5,b=125:c.,c,8c,c.,d#,8d,d,8c,c,8c,2c.";
 
 //////////////////////////////////////////////////Function prototypes//////////////////////////////////////////////////
 
+/************************* Game logic.*************************/
 void Idle();
 
 void Game();
@@ -95,44 +96,52 @@ void GameOver();
 
 void GameComplete();
 
-void PrintGameCompleteSetup();
+void EnterHighscore();
+
+void GameDifficulty();
+
+void ResetGameBuffer();
 
 byte CheckButton(byte buttonPin);
 
+
+/************************* TFT DISPLAY.*************************/
 void TftInitiate();
 
-void CalibrateRtc();
-
-void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
-
-void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY);
+void PrintGameCompleteSetup();
 
 void PrintStartMenu();
 
 void PrintDifficultyMenu();
 
-void GameDifficulty();
-
-void EnterHighscore();
+void PrintHighScoreTable();
 
 int EnterInitials();
 
+void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY);
+
+void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
+
+void MoveUpInMenu();
+
+void MoveDownInMenu();
+
+
+/************************* REAL TIME CLOCK.*************************/
+void CalibrateRtc();
+
+void WriteEntriesToRtcMemory();
+
+void ReadEntriesFromRtcMemory();
+
+
+
+/** High score functions.*/
 void UpdateHighScore(char *initials, byte time);
 
 void AddHighScoreEntry(int index, char *initials, byte time);
 
 void MakeSpaceForHighScoreEntry(int indexToReplace);
 
-void PrintHighScoreTable();
-
-void WriteEntriesToRtcMemory();
-
-void ReadEntriesFromRtcMemory();
-
-void ResetGameBuffer();
-
-void MoveUpInMenu();
-
-void MoveDownInMenu();
 
 #endif //EXAMEMBEDDED_MAIN_H
