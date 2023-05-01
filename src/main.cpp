@@ -321,7 +321,6 @@ void Game() {
     }
 }
 
-// TODO CHANGE THIS TO ANIMATION OR PICTURE???????????????????
 
 /*************************************************************************
  * Prints game over screen and goes back to IDLE if ok button is pressed.
