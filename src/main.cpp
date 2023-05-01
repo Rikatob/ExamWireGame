@@ -33,6 +33,7 @@ SCL -> A5 (CLOCK LINE)
 */
 #include <SdFat.h>
 #include <NonBlockingRtttl.h>
+#include "tunes.h"
 /**
 <<<<<<<<<<<<<<<<<<<< DS3231 >>>>>>>>>>>>>>>>>>>>
 */
