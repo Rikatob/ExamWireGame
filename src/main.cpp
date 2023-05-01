@@ -25,14 +25,12 @@ SCL -> A5 (CLOCK LINE)
 /**
 <<<<<<<<<<<<<<<<<<<< ST7789 >>>>>>>>>>>>>>>>>>>>
 */
-#include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <Adafruit_ImageReader.h>
 #include <SPI.h>
 /**
 <<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
 */
-//#include <SD.h>
 #include <SdFat.h>
 #include <NonBlockingRtttl.h>
 /**
