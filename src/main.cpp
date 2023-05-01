@@ -51,7 +51,6 @@ Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 Adafruit_Image img;        // An image loaded into RAM
 int32_t width = 0, height = 0; // BMP image x y.
 
-void SplashScreen();
 
 void setup() {
     pinMode(WIRE_PIN, INPUT_PULLUP);
