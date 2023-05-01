@@ -27,11 +27,13 @@ SCL -> A5 (CLOCK LINE)
 */
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
+#include <Adafruit_ImageReader.h>
 #include <SPI.h>
 /**
 <<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
 */
-#include <SD.h>
+//#include <SD.h>
+#include <SdFat.h>
 #include <NonBlockingRtttl.h>
 /**
 <<<<<<<<<<<<<<<<<<<< DS3231 >>>>>>>>>>>>>>>>>>>>
@@ -46,6 +48,12 @@ RtcDateTime startTime;
 RtcDateTime currentTime;
 HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
 
+SdFat SD;
+Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
+Adafruit_Image img;        // An image loaded into RAM
+int32_t width = 0, height = 0; // BMP image x y.
+
+void SplashScreen();
 
 void setup() {
     pinMode(WIRE_PIN, INPUT_PULLUP);
@@ -66,6 +74,9 @@ void setup() {
 
     /** TFT */
     TftInitiate();
+    if (!SD.begin(SD_CS, SD_SCK_MHZ(10))) {
+        Serial.println(F("SD begin() failed"));
+    }
 
     /** Init the variables with values.*/
     // Used to handle the "bouncing" effect of button.
@@ -73,11 +84,11 @@ void setup() {
     // Array to hold the ascii value of the arrow used in menu, with zero terminator as default.
     pzAsciArrow[0] = (char) -81;
     pzAsciArrow[1] = '\0';
-    // Default state as idle.
-    currentState = IDLE;
-    // default difficulty easy.
+    // Default state as SPALSH_SCREEN.
+    currentState = SPLASH_SCREEN;
+    // Default difficulty easy.
     difficulty = EASY;
-    // Set it to true so the first time idle runs the "setup" for idle state.
+    // Set it to true so the first time Splash screen runs the "setup" for SPLASH_SCREEN state.
     stateChanged = true;
 }
 
@@ -85,6 +96,9 @@ void setup() {
 void loop() {
 
     switch (currentState) {
+        case SPLASH_SCREEN:
+            SplashScreen();
+            break;
         case IDLE:
             Idle();
             break;
@@ -109,6 +123,30 @@ void loop() {
     }
 }
 
+void SplashScreen() {
+    if (stateChanged) {
+        ImageReturnCode stat;
+        stat = reader.drawBMP("/keen.bmp", tft, 0, 0);
+        reader.printStatus(stat);  // Print status to Serial.
+        stateChanged = false;
+        /** If not playing song begin(init) the song for Idle*/
+        if (!rtttl::isPlaying()) {
+            rtttl::begin(BUZZER_PIN, tetris2);
+        }
+    }
+
+    /** Keeps playing song.*/
+    rtttl::play();
+
+
+    byte okBtnPressed = CheckButton(BTN_OK_PIN);
+    if(okBtnPressed){
+        currentState = IDLE;
+        stateChanged = true;
+    }
+
+}
+
 /****************************************************************************
  * Prints the main screen containing main menu and handles the users choice.
 ****************************************************************************/
@@ -119,14 +157,7 @@ void Idle() {
         PrintStartMenu();
         stateChanged = false;
 
-        /** If not playing song begin(init) the song for Idle*/
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, tetris2);
-        }
     }
-
-    /** Keeps playing song.*/
-    rtttl::play();
 
     byte okBtnPressed = CheckButton(BTN_OK_PIN);
     byte upBtnPressed = CheckButton(BTN_UP_PIN);
