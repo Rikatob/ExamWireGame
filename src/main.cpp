@@ -25,14 +25,12 @@ SCL -> A5 (CLOCK LINE)
 /**
 <<<<<<<<<<<<<<<<<<<< ST7789 >>>>>>>>>>>>>>>>>>>>
 */
-#include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <Adafruit_ImageReader.h>
 #include <SPI.h>
 /**
 <<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
 */
-//#include <SD.h>
 #include <SdFat.h>
 #include <NonBlockingRtttl.h>
 /**
@@ -53,7 +51,6 @@ Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 Adafruit_Image img;        // An image loaded into RAM
 int32_t width = 0, height = 0; // BMP image x y.
 
-void SplashScreen();
 
 void setup() {
     pinMode(WIRE_PIN, INPUT_PULLUP);
