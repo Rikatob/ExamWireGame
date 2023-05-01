@@ -44,6 +44,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 RtcDS3231<TwoWire> Rtc(Wire);
 RtcDateTime startTime;
 RtcDateTime currentTime;
+HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
 
 
 void setup() {
@@ -65,6 +66,19 @@ void setup() {
 
     /** TFT */
     TftInitiate();
+
+    /** Init the variables with values.*/
+    // Used to handle the "bouncing" effect of button.
+    debounceDuration = 150;
+    // Array to hold the ascii value of the arrow used in menu, with zero terminator as default.
+    pzAsciArrow[0] = (char) -81;
+    pzAsciArrow[1] = '\0';
+    // Default state as idle.
+    currentState = IDLE;
+    // default difficulty easy.
+    difficulty = EASY;
+    // Set it to true so the first time idle runs the "setup" for idle state.
+    stateChanged = true;
 }
 
 
@@ -339,7 +353,7 @@ void GameComplete() {
  * Print text and players time to screen.
  * Print text to ask for storing highscore or try again.
 **********************************************************/
-void PrintGameCompleteSetup(){
+void PrintGameCompleteSetup() {
     DrawText("SUCCESS!!", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 35, 35, true);
     snprintf(gameBuffer, ArraySize(gameBuffer), "Your time:%02d.sec", GAME_DURATION - timeLeft);
     DrawText(gameBuffer, ST77XX_BLUE, 2, 20, 70, false);
