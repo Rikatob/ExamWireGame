@@ -120,8 +120,6 @@ void PrintHighScoreTable();
 
 int EnterInitials();
 
-void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY);
-
 void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool clearScreen);
 
 void MoveUpInMenu();

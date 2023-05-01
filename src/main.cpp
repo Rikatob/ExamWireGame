@@ -29,7 +29,7 @@ SCL -> A5 (CLOCK LINE)
 #include <Adafruit_ImageReader.h>
 #include <SPI.h>
 /**
-<<<<<<<<<<<<<<<<<<<< SD-CARD >>>>>>>>>>>>>>>>>>>>
+<<<<<<<<<<<<<<<<<<<< SD-CARD/TONES >>>>>>>>>>>>>>>>>>>>
 */
 #include <SdFat.h>
 #include <NonBlockingRtttl.h>
@@ -433,24 +433,6 @@ void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool 
     tft.setTextSize(size);
     tft.setTextWrap(true);
     tft.print(text);
-}
-
-// TODO USE THIS PRINT DATE TIME ????????????????
-// print out the time and date from DS3231 to a certain place in the TFT.
-void printDateTime(const RtcDateTime &dt, uint8_t cursorX, uint8_t cursorY) {
-    char datestring[20];
-
-    snprintf_P(datestring,
-               ArraySize(datestring),
-               PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
-               dt.Month(),
-               dt.Day(),
-               dt.Year(),
-               dt.Hour(),
-               dt.Minute(),
-               dt.Second());
-    //tft.setTextSize(2);
-    DrawText(datestring, ST77XX_BLUE, DEFAULT_TEXT_SIZE, cursorX, cursorY, false);
 }
 
 /*************************************************************************
