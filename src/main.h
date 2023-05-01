@@ -39,6 +39,7 @@
 /////////////////////////////////////////////////////ENUMS/STRUCTS/////////////////////////////////////////////////////
 
 enum State {
+    SPLASH_SCREEN,
     IDLE,
     GAME,
     GAME_OVER,
@@ -61,20 +62,20 @@ typedef struct _HighScoreEntry {
 
 /////////////////////////////////////////////////////Variables/////////////////////////////////////////////////////
 unsigned long lastTimeButtonWasPressed = 0;
-unsigned long previousTime = 0;
-enum State currentState = IDLE; // Default state as idle.
-enum Difficulty difficulty = EASY; // default difficulty easy.
-bool stateChanged = true; // Set it to true so the first time idle runs the "setup" for idle state.
-char gameBuffer[20] = {0};
-char pzAsciArrow[2] = {(char) -81, '\0'};
-uint16_t textColor = 0;
-byte debounceDuration = 150; // Used to handle the "bouncing" effect of button.
-byte playerLives = 0;
-byte highScoreEntriesCount = 0;
-byte currentPos = 0;
-byte timeGoneBy = 0;
-byte timeLeft = 0;
-HighScoreEntry highScoreEntries[HIGH_SCORE_TABLE_SIZE];
+unsigned long previousTime;
+enum State currentState;
+enum Difficulty difficulty;
+bool stateChanged;
+char gameBuffer[20];
+char pzAsciArrow[2];
+uint16_t textColor;
+byte debounceDuration;
+byte playerLives;
+byte highScoreEntriesCount;
+byte currentPos;
+byte timeGoneBy;
+byte timeLeft;
+
 
 /**RTTTL format tunes REF: http://arcadetones.emuunlim.com/*/
 // const char *tetris = "tetris:d=4,o=5,b=160:e6,8b,8c6,8d6,16e6,16d6,8c6,8b,a,8a,8c6,e6,8d6,8c6,b,8b,8c6,d6,e6,c6,a,2a,8p,d6,8f6,a6,8g6,8f6,e6,8e6,8c6,e6,8d6,8c6,b,8b,8c6,d6,e6,c6,a,a";
@@ -88,6 +89,8 @@ const char *death = "Death March:d=4,o=5,b=125:c.,c,8c,c.,d#,8d,d,8c,c,8c,2c.";
 //////////////////////////////////////////////////Function prototypes//////////////////////////////////////////////////
 
 /************************* Game logic.*************************/
+void SplashScreen();
+
 void Idle();
 
 void Game();
@@ -128,6 +131,7 @@ void MoveDownInMenu();
 
 
 /************************* REAL TIME CLOCK.*************************/
+
 void CalibrateRtc();
 
 void WriteEntriesToRtcMemory();
