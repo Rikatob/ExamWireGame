@@ -13,6 +13,7 @@
 // Game settings
 #define GAME_DURATION 30
 #define HIGH_SCORE_TABLE_SIZE 3
+//#define RESET_HIGHSCORE // Uncomment this to reset the highscore list in RTC EPROM.
 
 // GamePins
 #define WIRE_PIN 5
@@ -125,6 +126,8 @@ void CalibrateRtc();
 void WriteEntriesToRtcMemory();
 
 void ReadEntriesFromRtcMemory();
+
+void ResetHighScoreInRtc();
 
 
 

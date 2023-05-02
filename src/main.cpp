@@ -68,8 +68,10 @@ void setup() {
     CalibrateRtc();
 
     /** Load the high scores from rtc memory.*/
+#if defined(RESET_HIGHSCORE)
+    ResetHighScoreInRtc();
+#endif
     ReadEntriesFromRtcMemory();
-
     /** TFT */
     TftInitiate();
     if (!SD.begin(SD_CS, SD_SCK_MHZ(10))) {
@@ -127,18 +129,17 @@ void SplashScreen() {
         stat = reader.drawBMP("/keen.bmp", tft, 0, 0);
         reader.printStatus(stat);  // Print status to Serial.
         stateChanged = false;
-        /** If not playing song begin(init) the song for Idle*/
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, tetris2);
-        }
     }
-
+    /** If not playing song begin(init) the song for Idle*/
+    if (!rtttl::isPlaying()) {
+        rtttl::begin(BUZZER_PIN, tetris2);
+    }
     /** Keeps playing song.*/
     rtttl::play();
 
 
     byte okBtnPressed = CheckButton(BTN_OK_PIN);
-    if(okBtnPressed){
+    if (okBtnPressed) {
         currentState = IDLE;
         stateChanged = true;
     }
@@ -258,9 +259,9 @@ void Game() {
         previousTime = GAME_DURATION; // Initial set it to duration of game.
         startTime = Rtc.GetDateTime();
         stateChanged = false;
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, mario);
-        }
+    }
+    if (!rtttl::isPlaying()) {
+        rtttl::begin(BUZZER_PIN, mario);
     }
     /** Keeps playing song.*/
     rtttl::play();
@@ -330,9 +331,10 @@ void GameOver() {
         rtttl::stop();
         DrawText("GAME OVER!", ST77XX_RED, DEFAULT_TEXT_SIZE, 25, 55, true);
         stateChanged = false;
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, death);
-        }
+    }
+
+    if (!rtttl::isPlaying()) {
+        rtttl::begin(BUZZER_PIN, death);
     }
 
     /** Keeps playing song.*/
@@ -353,9 +355,10 @@ void GameComplete() {
         rtttl::stop();
         PrintGameCompleteSetup();
         stateChanged = false;
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, indy);
-        }
+    }
+
+    if (!rtttl::isPlaying()) {
+        rtttl::begin(BUZZER_PIN, indy);
     }
 
     /** Keeps playing song.*/
@@ -611,11 +614,6 @@ void PrintHighScoreTable() {
         rtttl::stop();
         DrawText("HIGH SCORES", ST77XX_GREEN, DEFAULT_TEXT_SIZE, 20, 5, true);
 
-        /** Play giana while showing highscore.*/
-        if (!rtttl::isPlaying()) {
-            rtttl::begin(BUZZER_PIN, giana);
-        }
-
         /** Prints the layout for table and every highscore entry in the right format. */
         for (int i = 0; i < highScoreEntriesCount; i++) {
             ResetGameBuffer();
@@ -650,6 +648,11 @@ void PrintHighScoreTable() {
 
             DrawText(gameBuffer, color, DEFAULT_TEXT_SIZE - 1, xCorr + 15, yCorr + 17, false);
         }
+    }
+
+    /** Play giana while showing highscore.*/
+    if (!rtttl::isPlaying()) {
+        rtttl::begin(BUZZER_PIN, giana);
     }
 
     rtttl::play();
@@ -706,6 +709,26 @@ void WriteEntriesToRtcMemory() {
     byte error = Wire.endTransmission();
     Serial.print("Return Code RtcMemory Write: ");
     Serial.println(error);
+}
+
+void ResetHighScoreInRtc() {
+    Wire.beginTransmission(0x57);
+    Wire.write(0x00);
+    Wire.write(0x00);
+    Wire.write(HIGH_SCORE_TABLE_SIZE);
+    for (int i = 0; i < HIGH_SCORE_TABLE_SIZE; i++) {
+        for (int j = 0; j < 3; j++) {
+            Wire.write('A');
+        }
+        Wire.write('\0');
+        Wire.write(GAME_DURATION);
+    }
+
+    /** Print Return code.*/
+    byte error = Wire.endTransmission();
+    Serial.print("Return Code RtcMemory Write: ");
+    Serial.println(error);
+    delay(100);
 }
 
 /*********************************************************************************************
