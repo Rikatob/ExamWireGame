@@ -4,6 +4,8 @@
 // TODO[x] Change some statics (or all) to global variables.                   //
 // TODO[x] Use highscore temp to illustrate adding highscores to rtc memory.   //
 // TODO[x] Make the highscore table stored in RTC memory.                      //
+// TODO[ ] Use lightDiode to enforce the blue, yellow, red timer countdown     //
+// TODO[ ] Oragnize code into Classes or new .c , .h files.                    //
 /////////////////////////////////////////////////////////////////////////////////
 /**
 <<<<<<<<SPI>>>>>>>>>
@@ -445,7 +447,6 @@ void DrawText(const char *text, uint16_t color, byte size, byte x, byte y, bool 
 void EnterHighscore() {
     if (stateChanged) {
         rtttl::stop();
-        stateChanged = false;
     }
     /** Check if player is done enter initials.*/
     int iReturnCode = EnterInitials();

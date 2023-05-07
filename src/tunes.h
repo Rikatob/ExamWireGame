@@ -1,6 +1,4 @@
-//
-// Created by rikat on 5/2/2023.
-//
+
 
 #ifndef EXAMWIREGAME_TUNES_H
 #define EXAMWIREGAME_TUNES_H

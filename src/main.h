@@ -1,6 +1,4 @@
-//
-// Created by rikat on 4/24/2023.
-//
+
 
 #ifndef EXAMEMBEDDED_MAIN_H
 #define EXAMEMBEDDED_MAIN_H
@@ -13,7 +11,7 @@
 // Game settings
 #define GAME_DURATION 30
 #define HIGH_SCORE_TABLE_SIZE 3
-//#define RESET_HIGHSCORE // Uncomment this to reset the highscore list in RTC EPROM.
+//#define RESET_HIGHSCORE                          // Uncomment this to reset the highscore list in RTC EPROM.
 
 // GamePins
 #define WIRE_PIN 5
